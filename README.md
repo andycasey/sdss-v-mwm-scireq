@@ -3,6 +3,14 @@ SDSS V Milky Way Mapper: Science Requirements
 
 Tests n' shit.
 
+To-do
+-----
+- [ ] Download Holtz training set
+- [ ] Train model with existing Holtz training set
+- [ ] Train model with strict(er) optimization requirements and compare to existing trained model
+- [ ] Easily identify and extract individual visits
+- [ ] Map out original label recovery as a function of S/N -- save results
+- [ ] 
 
 Experiments
 -----------
