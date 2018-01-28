@@ -1,3 +1,7 @@
 .gitignore
 
-dr14/
+.cloud.key
+.cloud.key.pub
+connect.sh
+
+data/
