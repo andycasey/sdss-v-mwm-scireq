@@ -3,6 +3,17 @@ SDSS V Milky Way Mapper: Science Requirements
 
 Tests n' shit.
 
+Environment
+-----------
+
+````
+conda create -n sdss python=3.6 anaconda
+#git submodule add https://github.com/andycasey/AnniesLasso AnniesLasso
+source activate sdss
+cd AnniesLasso
+python setup.py install
+````
+
 To-do
 -----
 - [ ] Download Holtz training set
