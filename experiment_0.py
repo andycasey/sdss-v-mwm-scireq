@@ -17,6 +17,13 @@ import thecannon.continuum
 from apogee import config
 from apogee.io import read_spectrum
 
+FIGURE_PATH = "experiments/0/"
+
+# For high accuracy (super slow):
+train_kwds = dict()
+
+# For low accuracy:
+train_kwds = dict(op_method="l_bfgs_b", op_kwds=dict(factr=1e12, pgtol=1e-5))
 
 training_set_labels = Table.read(
     os.path.join(config["CANNON_DR14_DIR"], 
@@ -71,35 +78,28 @@ label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "CI_FE", "N_FE", "O_FE", "NA_FE",
 
 
 vectorizer = tc.vectorizer.PolynomialVectorizer(label_names, order=2)
-raise a
+
+
 model = tc.CannonModel(
     training_set_labels, training_set_flux, training_set_ivar, vectorizer)
 
-raise a
-model.train()
+model.train(**train_kwds)
 
-
-# TODO: Save the one-to-one for this model
-# TODO: Re-train models with TEFF, LOGG, M_H, ALPHA_M, and each element at a
-#       time, and plot the spectral derivatives with respect to the main model.
-#       Are they equivalent, or is it possible there is some bad training?
-# TODO: Run the full model on all visits and plot dispersion as a function of 
-#       S/N value. This will be our baseline.
-
-raise a
-
-
+# Do one-to-one.
 oto_labels, oto_cov, oto_meta = model.test(training_set_flux, training_set_ivar)
 
+L = len(label_names)
+A = int(np.ceil(L**0.5))
+fig, axes = plt.subplots(A, A, figsize=(3*A, 3*A))
+axes = np.array(axes).flatten()
 
+for i, (ax, label_name) in enumerate(zip(axes, vectorizer.label_names)):
 
-for i, label_name in enumerate(vectorizer.label_names):
+    x = training_set_labels[label_name]
+    y = oto_labels[:, i]
 
-    x, y = (training_set_labels[label_name], oto_labels[:, i])
-
-    fig, ax = plt.subplots()
-    ax.scatter(x, y)
-
+    ax.scatter(x, y, facecolor="b", alpha=0.5, s=1)
+    
     limits = np.hstack([ax.get_xlim(), ax.get_ylim()])
     limits = (min(limits), max(limits))
     ax.plot(limits, limits, c="#666666", linestyle=":", zorder=-1)
@@ -108,11 +108,85 @@ for i, label_name in enumerate(vectorizer.label_names):
 
     ax.text(0.05, 0.90, "{:.2f} {:.2f}".format(np.mean(y-x), np.std(y-x)),
             transform=ax.transAxes)
-
+    
     ax.set_title(label_name)
 
+fig.tight_layout()
+fig.savefig(os.path.join(FIGURE_PATH, "one_to_one.pdf"))
 
-# Analyse all stars and calculate dispersion with respect to S/N.
 
 
+# Let's check if this model is trained correctly. We will re-train models of
+# (TEFF, LOGG, FE_H) and one X_FE at a time, then plot the spectral derivatives
+# of X_FE, X_FE * TEFF, etc and look at the difference.
+for label_name in label_names[3:]:
+
+    new_vectorizer = tc.vectorizer.PolynomialVectorizer(
+        ["TEFF", "LOGG", "FE_H", label_name], 2)
+
+    new_model = tc.CannonModel(training_set_labels, training_set_flux,
+        training_set_ivar, new_vectorizer)
+    new_model.train(**train_kwds)
+
+    # Do one-to-one:
+
+    new_oto_labels, new_oto_cov, new_oto_media = new_model.test(
+        training_set_flux, training_set_ivar)
+
+    A = 2
+    fig, axes = plt.subplots(A, A, figsize=(3*A, 3*A))
+    axes = np.array(axes).flatten()
+
+    for i, (ax, label_name) in enumerate(zip(axes, new_vectorizer.label_names)):
+
+        x = training_set_labels[label_name]
+        y_org = oto_labels[:, vectorizer.label_names.index(label_name)]
+        y_new = new_oto_labels[:, i]
+
+        ax.scatter(x, y, facecolor="b", alpha=0.5, s=1)
+        ax.scatter(x, y_new, facecolor="r", alpha=0.5, s=1)
+        
+        limits = np.hstack([ax.get_xlim(), ax.get_ylim()])
+        limits = (min(limits), max(limits))
+        ax.plot(limits, limits, c="#666666", linestyle=":", zorder=-1)
+        ax.set_xlim(limits)
+        ax.set_ylim(limits)
+
+        ax.text(0.05, 0.90, "{:.2f} {:.2f}".format(np.mean(y_org-x), np.std(y_org-x)),
+                transform=ax.transAxes)
+        
+        ax.text(0.05, 0.75, "{:.2f} {:.2f}".format(np.mean(y_new-x), np.std(y_new-x)),
+                transform=ax.transAxes)
+        
+        ax.set_title(label_name)
+
+    fig.tight_layout()
+    fig.savefig(
+        os.path.join(FIGURE_PATH, "one_to_one_4_label_{}.pdf".format(label_name)))
+
+    fig, ax = plt.subplots(figsize=(24, 3))
+
+    old_idx = vectorizer.label_names.index(label_name)
+    new_idx = new_vectorizer.label_names.index(label_name)
+
+    ax.plot(vacuum_wavelength, model.theta.T[old_idx], c='b',
+        label="Full model")
+    ax.plot(vacuum_wavelength, new_model.theta.T[new_idx], c='r',
+        label="Four-label model")
+    ax.set_xlim(vacuum_wavelength[0], vacuum_wavelength[-1])
+
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(
+        os.path.join(FIGURE_PATH, "theta_coefficients_{}.pdf".format(label_name)))
+
+
+
+
+# Run the model on all visits and plot dispersion as a function of S/N value.
+
+
+
+# TODO: Run the full model on all visits and plot dispersion as a function of 
+#       S/N value. This will be our baseline.
 
