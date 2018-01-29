@@ -7,7 +7,7 @@ from .config import config
 
 
 def read_spectrum(telescope, location_id, filename, combined=True,
-    combined_weighting_method="individual", full_output=False):
+    combined_weighting_method="individual", full_output=False, **kwargs):
     """
     Read an APOGEE spectrum given the telescope used to observe it, the location
     identifier of the spectrum, and the spectrum filename.
@@ -51,6 +51,7 @@ def read_spectrum(telescope, location_id, filename, combined=True,
     path = os.path.join(
         config["APOGEE_DR14_DIR"], telescope, location_id, filename)
 
+
     image = fits.open(path)
 
     #with fits.open(path) as image:
@@ -71,6 +72,8 @@ def read_spectrum(telescope, location_id, filename, combined=True,
     flux_error = np.atleast_2d(image[2].data)[flux_start:flux_end]
     
     ivar = flux_error**-2
+    small_value = kwargs.pop("small_value", 1e-20)
+    ivar[ivar <= small_value] = 0
 
     assert flux.size >= P
     assert flux.shape == ivar.shape

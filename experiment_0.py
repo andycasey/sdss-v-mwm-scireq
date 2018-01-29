@@ -30,13 +30,14 @@ training_set_ivar = np.zeros_like(training_set_flux)
 
 continuum_kwds = dict(
     regions=[
-        (15101, 15833),
+        (15101, 15833), 
         (15834, 16454),
         (16455, 16999)
     ],
     continuum_pixels=np.loadtxt(os.path.join(
         config["CANNON_DR14_DIR"], "continuum_pixels.list"), dtype=int),
     L=1400, order=3, fill_value=1.0)
+
 
 for i, star in enumerate(training_set_labels):
 
@@ -51,6 +52,7 @@ for i, star in enumerate(training_set_labels):
     # Flatten arrays.
     flux, ivar, continuum = (flux.flatten(), ivar.flatten(), continuum.flatten())
 
+    print(i)
 
 raise a
 
