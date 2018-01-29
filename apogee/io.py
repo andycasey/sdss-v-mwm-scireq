@@ -2,8 +2,44 @@
 import os
 import numpy as np
 from astropy.io import fits
+from glob import glob
 
 from .config import config
+
+
+def get_spectrum_path(telescope, location_id, filename):
+    """
+    Return the full path of a specified spectrum.
+
+    :param telescope:
+        The telescope identifier (e.g., apo25m).
+
+    :param location_id:
+        The location identifier given to the spectrum (e.g., 2227).
+
+    :param filename:
+        The basename of the file, (e.g., apStar-r8-2M14593130+4725291.fits)
+    """
+
+    location_id = str(location_id)
+    telescope, filename = (telescope.strip(), filename.strip())
+    if "/" in "".join([telescope, location_id, filename]):
+        raise ValueError("telescope, location_id, and filename cannot contain"
+                         "slashes (/)")
+
+    if telescope == "apo1m":
+        possible_paths = os.path.join(
+            config["APOGEE_DR14_DIR"], telescope, "*", filename)
+        paths = glob(possible_paths)
+        if len(paths) != 1:
+            raise NotImplementedError("err,..... unsure what to do")
+        path = paths[0]
+
+    else:    
+        path = os.path.join(
+            config["APOGEE_DR14_DIR"], telescope, location_id, filename)
+
+    return path
 
 
 def read_spectrum(telescope, location_id, filename, combined=True,
@@ -37,20 +73,13 @@ def read_spectrum(telescope, location_id, filename, combined=True,
             a dictionary metadata.
     """
 
-    location_id = str(location_id)
-    if "/" in "".join([telescope, location_id, filename]):
-        raise ValueError("telescope, location_id, and filename cannot contain"
-                         "slashes (/)")
-
     available_methods = ["individual", "global"]
     combined_weighting_method = str(combined_weighting_method).lower()
     if combined and combined_weighting_method not in available_methods:
         raise ValueError("combined_weighting_method must be either {}"\
                          .format(" or ".join(available_methods)))
 
-    path = os.path.join(
-        config["APOGEE_DR14_DIR"], telescope, location_id, filename)
-
+    path = get_spectrum_path(telescope, location_id, filename)
 
     image = fits.open(path)
 
@@ -72,8 +101,10 @@ def read_spectrum(telescope, location_id, filename, combined=True,
     flux_error = np.atleast_2d(image[2].data)[flux_start:flux_end]
     
     ivar = flux_error**-2
+
     small_value = kwargs.pop("small_value", 1e-20)
     ivar[ivar <= small_value] = 0
+
 
     assert flux.size >= P
     assert flux.shape == ivar.shape
