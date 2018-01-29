@@ -1,15 +1,17 @@
 SDSS V Milky Way Mapper: Science Requirements
 ---------------------------------------------
 
-Tests n' shit.
+What signal-to-noise ratios are required to deliver the requisite precision in stellar effective temperature, surface gravity, and chemical abundances from SDSS-V Milky Way Mapper?
 
 Environment
 -----------
 
 ````
 conda create -n sdss python=3.6 anaconda
-#git submodule add https://github.com/andycasey/AnniesLasso AnniesLasso
 source activate sdss
+conda install -n sdss -y numpy scipy matplotlib astropy ipython
+git submodule init
+git submodule update
 cd AnniesLasso
 python setup.py install
 ````
