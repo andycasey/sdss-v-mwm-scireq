@@ -43,7 +43,8 @@ model_with_bounds = tc.restricted.RestrictedCannonModel(training_set_labels,
     training_set_flux, training_set_ivar, vectorizer, theta_bounds=theta_bounds)
 
 model_with_bounds.train(**train_kwds)
-model_with_bounds.write(os.path.join(OUTPUT_PATH, "model_with_bounds.model"))
+model_with_bounds.write(os.path.join(OUTPUT_PATH, "model_with_bounds.model"),
+                        overwrite=True)
 
 
 """
@@ -68,7 +69,7 @@ fig.savefig(os.path.join(OUTPUT_PATH, "restricted_one_to_one.pdf"), dpi=300)
 
 # Run the model on all visits and plot dispersion as a function of S/N value.
 wb_snr, wb_combined_snr, wb_label_difference, wb_filename = \
-    precision_from_repeat_visits(model_with_bounds, test_kwds=test_kwds)
+    precision_from_repeat_visits(model_with_bounds, N_comparisons=3000, test_kwds=test_kwds)
 
 
 """
@@ -84,7 +85,8 @@ vectorizer_wo_ct = tc.vectorizer.PolynomialVectorizer(terms=new_terms)
 model_wo_ct = tc.CannonModel(training_set_labels, training_set_flux,
     training_set_ivar, vectorizer_wo_ct)
 model_wo_ct.train(**train_kwds)
-model_wo_ct.write(os.path.join(OUTPUT_PATH, "model_wo_ct.model"))
+model_wo_ct.write(os.path.join(OUTPUT_PATH, "model_wo_ct.model"),
+                  overwrite=True)
 
 """
 # Plot all theta.
@@ -105,7 +107,7 @@ fig.savefig(os.path.join(OUTPUT_PATH, "wo_ct_one_to_one.pdf"), dpi=300)
 """
 
 woct_snr, woct_combined_snr, woct_label_difference, woct_filename = \
-    precision_from_repeat_visits(model_wo_ct, test_kwds=test_kwds)
+    precision_from_repeat_visits(model_wo_ct, N_comparisons=3000, test_kwds=test_kwds)
 
 
 """
@@ -118,7 +120,8 @@ model_wb_and_wo_ct = tc.restricted.RestrictedCannonModel(training_set_labels,
     training_set_flux, training_set_ivar, vectorizer_wo_ct, 
     theta_bounds=theta_bounds)
 model_wb_and_wo_ct.train(**train_kwds)
-model_wb_and_wo_ct.write(os.path.join(OUTPUT_PATH, "model_wb_and_wo_ct.model"))
+model_wb_and_wo_ct.write(os.path.join(OUTPUT_PATH, "model_wb_and_wo_ct.model"),
+                         overwrite=True)
 
 """
 # Plot all theta.
@@ -139,5 +142,5 @@ fig.savefig(os.path.join(OUTPUT_PATH, "wb_and_wo_ct_one_to_one.pdf"), dpi=300)
 """
 
 wb_wo_ct_snr, wb_wo_ct_combined_snr, wb_wo_ct_label_difference, wb_wo_ct_filename \
-    = precision_from_repeat_visits(model_wb_and_wo_ct, test_kwds=test_kwds)
+    = precision_from_repeat_visits(model_wb_and_wo_ct, N_comparisons=3000, test_kwds=test_kwds)
 

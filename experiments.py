@@ -60,7 +60,7 @@ def setup_training_set(filename="apogee-dr14-giants-xh-censor-training-set.fits"
     return (training_set_labels, training_set_flux, training_set_ivar)
 
 
-def generate_individual_visit_comparison(filename):
+def generate_individual_visit_comparison(filename, randomize=True, random_seed=42):
 
     # Load the allStar file.
 
@@ -72,9 +72,21 @@ def generate_individual_visit_comparison(filename):
     # Load individual visits from
 
     stars = fits.open(os.path.join(
-        os.path.join(config["APOGEE_DR14_DIR"], filename)))
+        os.path.join(config["APOGEE_DR14_DIR"], filename)))[1].data
 
-    for i, star in enumerate(stars[1].data):
+    # Apply QC.
+    print("HACK MAGIC APPLY QC")
+    ok = (stars["TEFF"] > 0) * (stars["LOGG"] > -5000)
+    stars = stars[ok]
+
+    N = len(stars)
+    if randomize:
+        np.random.seed(random_seed)
+        indices = np.random.choice(N, replace=False, size=N)
+    else:
+        indices = np.arange(N)
+
+    for i, star in enumerate(stars[indices]):
 
         vacuum_wavelength, flux, ivar, metadata = read_spectrum(
             star["TELESCOPE"], star["FIELD"], star["LOCATION_ID"], star["FILE"],
@@ -107,7 +119,8 @@ def generate_individual_visit_comparison(filename):
 
 
 def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None, 
-    filename="allStar-l31c.2.fits"):
+    filename="allStar-l31c.2.fits", randomize=True, random_seed=42):
+
 
     test_kwds = {} if test_kwds is None else test_kwds
 
@@ -117,7 +130,8 @@ def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None,
     visit_label_difference = []
     filenames = []
 
-    for comparison in generate_individual_visit_comparison(filename):
+    for comparison in generate_individual_visit_comparison(filename,
+        randomize=randomize, random_seed=random_seed):
 
         combined_flux, combined_ivar, visit_flux, visit_ivar, meta = comparison
 

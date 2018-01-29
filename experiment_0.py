@@ -50,7 +50,13 @@ test_kwds = dict()
 #    initial_labels=np.percentile(model.training_set_labels, [5, 50, 95], axis=0))
 
 model.train(**train_kwds)
-model.write(os.path.join(OUTPUT_PATH, "experiment_0.model"))
+model.write(os.path.join(OUTPUT_PATH, "experiment_0.model"), overwrite=True)
+
+
+# Run the model on all visits and plot dispersion as a function of S/N value.
+snr, combined_snr, label_difference, filename = precision_from_repeat_visits(
+    model, N_comparisons=10000, test_kwds=test_kwds)
+
 
 # Do one-to-one.
 oto_labels, oto_cov, oto_meta = model.test(training_set_flux, training_set_ivar,
@@ -58,12 +64,6 @@ oto_labels, oto_cov, oto_meta = model.test(training_set_flux, training_set_ivar,
 
 fig = tc.plot.one_to_one(model, oto_labels)
 fig.savefig(os.path.join(OUTPUT_PATH, "one_to_one.pdf"))
-
-
-
-# Run the model on all visits and plot dispersion as a function of S/N value.
-snr, combined_snr, label_difference, filename = precision_from_repeat_visits(
-    model, test_kwds=test_kwds)
 
 
 # TODO: Save this and plot it.
