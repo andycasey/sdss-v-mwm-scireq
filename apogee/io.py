@@ -96,8 +96,7 @@ def read_spectrum(telescope, field_id, location_id, filename, combined=True,
         flux_end = flux_start + 1
     else:
         flux_start, flux_end = (2, None)
-        raise NotImplementedError("only access combined spectra so far")
-
+        
     flux = np.atleast_2d(image[1].data)[flux_start:flux_end]
     flux_error = np.atleast_2d(image[2].data)[flux_start:flux_end]
     
@@ -106,22 +105,27 @@ def read_spectrum(telescope, field_id, location_id, filename, combined=True,
     small_value = kwargs.pop("small_value", 1e-20)
     ivar[ivar <= small_value] = 0
 
-
-    assert flux.size >= P
+    if combined: assert flux.size >= P
     assert flux.shape == ivar.shape
 
     assert np.all(np.isfinite(flux))
     assert np.all(np.isfinite(ivar))
     assert np.all(ivar >= 0)
 
-    image.close()
         
     # TODO: Add units?
+    snr_combined = image[0].header["SNR"]
+    snr_visits = [image[0].header["SNRVIS{:.0f}".format(i)] \
+                  for i in range(1, 1 + image[0].header["NVISITS"])]
 
-
+    image.close()
+    
     metadata = dict(
         telescope=telescope, location_id=location_id, field_id=field_id,
-        path=path, combined_weighting_method=combined_weighting_method,)
+        filename=filename,
+        path=path, combined_weighting_method=combined_weighting_method,
+        snr_combined=snr_combined, snr_visits=snr_visits)
+
 
     if full_output:
         raise NotImplementedError

@@ -16,16 +16,12 @@ import thecannon.continuum
 from apogee import config
 from apogee.io import read_spectrum
 
-from experiments import setup_training_set
-
+from experiments import setup_training_set, precision_from_repeat_visits
 
 training_set_labels, training_set_flux, training_set_ivar = setup_training_set()
 
 
-FIGURE_PATH = "experiments/0/"
-
-# For low accuracy:
-train_kwds = dict(op_method="l_bfgs_b", op_kwds=dict(factr=1e12, pgtol=1e-5))
+OUTPUT_PATH = "experiments/0/"
 
 
 # Original labels used by Holtz.
@@ -46,13 +42,33 @@ vectorizer = tc.vectorizer.PolynomialVectorizer(label_names, order=2)
 model = tc.CannonModel(
     training_set_labels, training_set_flux, training_set_ivar, vectorizer)
 
+# For low accuracy:
+train_kwds = dict(threads=1, op_method="l_bfgs_b", 
+                  op_kwds=dict(factr=1e12, pgtol=1e-5))
+
+test_kwds = dict(
+    initial_labels=np.percentile(model.training_set_labels, [5, 50, 95], axis=0))
+
 model.train(**train_kwds)
+model.write(os.path.join(OUTPUT_PATH, "experiment_0.model"))
 
 # Do one-to-one.
-oto_labels, oto_cov, oto_meta = model.test(training_set_flux, training_set_ivar)
+oto_labels, oto_cov, oto_meta = model.test(training_set_flux, training_set_ivar,
+                                           **test_kwds)
 
 fig = tc.plot.one_to_one(model, oto_labels)
-fig.savefig(os.path.join(FIGURE_PATH, "one_to_one.pdf"))
+fig.savefig(os.path.join(OUTPUT_PATH, "one_to_one.pdf"))
+
+
+
+# Run the model on all visits and plot dispersion as a function of S/N value.
+snr, combined_snr, label_difference, filename = precision_from_repeat_visits(
+    model, test_kwds=test_kwds)
+
+
+# TODO: Save this and plot it.
+raise a
+
 
 
 
@@ -71,7 +87,7 @@ for label_name in label_names[3:]:
     # Do one-to-one:
 
     new_oto_labels, new_oto_cov, new_oto_media = new_model.test(
-        training_set_flux, training_set_ivar)
+        training_set_flux, training_set_ivar, **test_kwds)
 
     A = 2
     fig, axes = plt.subplots(A, A, figsize=(3*A, 3*A))
@@ -102,7 +118,7 @@ for label_name in label_names[3:]:
 
     fig.tight_layout()
     fig.savefig(
-        os.path.join(FIGURE_PATH, "one_to_one_4_label_{}.pdf".format(label_name)))
+        os.path.join(OUTPUT_PATH, "one_to_one_4_label_{}.pdf".format(label_name)))
 
     fig, ax = plt.subplots(figsize=(24, 3))
 
@@ -118,16 +134,6 @@ for label_name in label_names[3:]:
     ax.legend()
     fig.tight_layout()
     fig.savefig(
-        os.path.join(FIGURE_PATH, "theta_coefficients_{}.pdf".format(label_name)))
+        os.path.join(OUTPUT_PATH, "theta_coefficients_{}.pdf".format(label_name)))
 
-
-
-
-
-# Run the model on all visits and plot dispersion as a function of S/N value.
-
-
-
-# TODO: Run the full model on all visits and plot dispersion as a function of 
-#       S/N value. This will be our baseline.
 
