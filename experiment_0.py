@@ -46,8 +46,8 @@ model = tc.CannonModel(
 train_kwds = dict(threads=1, op_method="l_bfgs_b", 
                   op_kwds=dict(factr=1e12, pgtol=1e-5))
 
-test_kwds = dict(
-    initial_labels=np.percentile(model.training_set_labels, [5, 50, 95], axis=0))
+test_kwds = dict()
+#    initial_labels=np.percentile(model.training_set_labels, [5, 50, 95], axis=0))
 
 model.train(**train_kwds)
 model.write(os.path.join(OUTPUT_PATH, "experiment_0.model"))
