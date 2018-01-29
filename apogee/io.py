@@ -7,42 +7,43 @@ from glob import glob
 from .config import config
 
 
-def get_spectrum_path(telescope, location_id, filename):
+def get_spectrum_path(telescope, field, location_id, filename):
     """
     Return the full path of a specified spectrum.
 
     :param telescope:
         The telescope identifier (e.g., apo25m).
 
-    :param location_id:
-        The location identifier given to the spectrum (e.g., 2227).
+    :param field:
+        The field identifier given to the spectrum (e.g., 120+12).
+    
+    :param location:
+        The location identifier given to the spectrum (e.g., 120+12).
 
     :param filename:
         The basename of the file, (e.g., apStar-r8-2M14593130+4725291.fits)
     """
 
-    location_id = str(location_id)
+    field = str(field).strip()
     telescope, filename = (telescope.strip(), filename.strip())
-    if "/" in "".join([telescope, location_id, filename]):
-        raise ValueError("telescope, location_id, and filename cannot contain"
+    location_id = str(location_id).strip()
+    if "/" in "".join([telescope, field, location_id, filename]):
+        raise ValueError("telescope, field, and filename cannot contain"
                          "slashes (/)")
 
-    if telescope == "apo1m":
-        possible_paths = os.path.join(
-            config["APOGEE_DR14_DIR"], telescope, "*", filename)
-        paths = glob(possible_paths)
-        if len(paths) != 1:
-            raise NotImplementedError("err,..... unsure what to do")
-        path = paths[0]
+    possible_paths = [
+        os.path.join(config["APOGEE_DR14_DIR"], telescope, field, filename),
+        os.path.join(config["APOGEE_DR14_DIR"], telescope, location_id, filename)
+    ]
 
-    else:    
-        path = os.path.join(
-            config["APOGEE_DR14_DIR"], telescope, location_id, filename)
+    for path in possible_paths:
+        if os.path.exists(path):
+            break
 
     return path
+    
 
-
-def read_spectrum(telescope, location_id, filename, combined=True,
+def read_spectrum(telescope, field_id, location_id, filename, combined=True,
     combined_weighting_method="individual", full_output=False, **kwargs):
     """
     Read an APOGEE spectrum given the telescope used to observe it, the location
@@ -79,7 +80,7 @@ def read_spectrum(telescope, location_id, filename, combined=True,
         raise ValueError("combined_weighting_method must be either {}"\
                          .format(" or ".join(available_methods)))
 
-    path = get_spectrum_path(telescope, location_id, filename)
+    path = get_spectrum_path(telescope, field_id, location_id, filename)
 
     image = fits.open(path)
 
@@ -119,7 +120,7 @@ def read_spectrum(telescope, location_id, filename, combined=True,
 
 
     metadata = dict(
-        telescope=telescope, location_id=location_id, filename=filename,
+        telescope=telescope, location_id=location_id, field_id=field_id,
         path=path, combined_weighting_method=combined_weighting_method,)
 
     if full_output:

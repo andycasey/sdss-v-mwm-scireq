@@ -8,8 +8,8 @@ rsync -aLvz --include "[0-9][0-9][0-9][0-9]/" \
     --include "apStar-*[0-9][0-9][0-9][0-9][0-9][0-9][0-9].fits" --exclude "*"\
     --prune-empty-dirs --progress \
     rsync://data.sdss.org/dr14/apogee/spectro/redux/r8/stars/apo25m/ apo25m/
-rsync -aLvz --include "[0-9][0-9][0-9][0-9]/" \
-    --include "apStar-*[0-9][0-9][0-9][0-9][0-9][0-9][0-9].fits" --exclude "*"\
+rsync -aLvz --include "*/" \
+    --include "apStar-*.fits" --exclude "*"\
     --prune-empty-dirs --progress \
     rsync://data.sdss.org/dr14/apogee/spectro/redux/r8/stars/apo1m/ apo1m/
 cd ../../../../../../../

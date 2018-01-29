@@ -44,7 +44,7 @@ for i, star in enumerate(training_set_labels):
 
     # Load in the spectrum.
     vacuum_wavelength, flux, ivar, metadata = read_spectrum(
-        star["TELESCOPE"], star["LOCATION_ID"], star["FILE"])
+        star["TELESCOPE"], star["FIELD"], star["LOCATION_ID"], star["FILE"])
 
     # Continuum normalize.
     normalized_flux, normalized_ivar, continuum, meta = tc.continuum.normalize(
@@ -59,15 +59,24 @@ for i, star in enumerate(training_set_labels):
 label_names = ["TEFF", "LOGG", "M_H", "ALPHA_M", "FE_H", "C_FE", "CI_FE", "N_FE",
                "O_FE", "NA_FE", "MG_FE", "AL_FE", "SI_FE", "P_FE", "S_FE", "K_FE",
                "CA_FE", "TI_FE", "TIII_FE", "V_FE", "CR_FE", "MN_FE", "CO_FE", "NI_FE"]
+# The Cannon very responsibly gives warnings that:
+# + [Fe/H] and [M/H] are highly correlated (rho = 1.0)
+# + [Si/Fe] and [alpha/M] are highly correlated (rho = 0.93)
+# + [Mg/Fe] and [alpha/M] are highly correlated (rho = 0.93)
 
-label_names = ["TEFF", "LOGG", "M_H"]
+# Therefore: removing [alpha/m] and [m/h]
+label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "CI_FE", "N_FE", "O_FE", "NA_FE", 
+               "MG_FE", "AL_FE", "SI_FE", "P_FE", "S_FE", "K_FE", "CA_FE", 
+               "TI_FE", "TIII_FE", "V_FE", "CR_FE", "MN_FE", "CO_FE", "NI_FE"]
+
+
 vectorizer = tc.vectorizer.PolynomialVectorizer(label_names, order=2)
-
+raise a
 model = tc.CannonModel(
     training_set_labels, training_set_flux, training_set_ivar, vectorizer)
 
 raise a
-model.train(threads=2)
+model.train()
 
 
 # TODO: Save the one-to-one for this model
