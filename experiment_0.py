@@ -7,6 +7,7 @@ Experiment 0: Is The Cannon model used for APOGEE DR14 optimised correctly?
 
 import numpy as np
 import os
+import pickle
 from astropy.io import fits
 from astropy.table import Table
 
@@ -57,6 +58,9 @@ model.write(os.path.join(OUTPUT_PATH, "experiment_0.model"), overwrite=True)
 snr, combined_snr, label_difference, filename = precision_from_repeat_visits(
     model, N_comparisons=10000, test_kwds=test_kwds)
 
+with open(os.path.join(OUTPUT_PATH, "precision_snr.pkl"), "wb") as fp:
+    pickle.dump((snr, combined_snr, label_difference, filename), fp)
+
 
 # Do one-to-one.
 oto_labels, oto_cov, oto_meta = model.test(training_set_flux, training_set_ivar,
@@ -64,12 +68,6 @@ oto_labels, oto_cov, oto_meta = model.test(training_set_flux, training_set_ivar,
 
 fig = tc.plot.one_to_one(model, oto_labels)
 fig.savefig(os.path.join(OUTPUT_PATH, "one_to_one.pdf"))
-
-
-# TODO: Save this and plot it.
-raise a
-
-
 
 
 # Let's check if this model is trained correctly. We will re-train models of

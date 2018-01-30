@@ -22,15 +22,15 @@ To-do
 - [X] Train model with existing Holtz training set
 - [X] Train model with strict(er) optimization requirements and compare to existing trained model
 - [X] Easily identify and extract individual visits
-- [ ] Map out original label recovery as a function of S/N -- save results
+- [X] Map out original label recovery as a function of S/N -- save results
 
 Experiments
 -----------
 
 - [X] Is DR14 optimized to the correct solution? **Yes**
-- [ ] Is there weirdness going on because labels are so similar? **Yes: REMOVE THEM&**
-- [ ] Map performance on individual visits with a trained model where we are confident that there is no weirdness going on
-- [ ] Limit correlated information by prohibiting negative `:math:\theta` coefficients for absorption lines (which would add emission to the spectrum)
+- [X] Is there weirdness going on because labels are so similar? **Yes: REMOVE THEM&**
+- [X] Map performance on individual visits with a trained model where we are confident that there is no weirdness going on
+- [X] Limit correlated information by prohibiting negative `:math:\theta` coefficients for absorption lines (which would add emission to the spectrum)
 - [ ] Test with and without windows
 - [ ] Test with windows and regularization
 - [ ] Look to see if a special covariance structure is warranted for prohibiting correlated information between elements 
