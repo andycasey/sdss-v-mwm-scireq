@@ -18,3 +18,11 @@ mkdir -p l31c/l31c.2/cannon
 cd l31c/l31c.2/cannon
 wget --http-user=$SDSS_USER --http-password=$SDSS_PASSWORD https://data.sdss.org/sas/apogeework/apogee/spectro/redux/r8/stars/l31c/l31c.2/cannon/apogee-dr14-giants-xh-censor-training-set.fits
 wget --http-user=$SDSS_USER --http-password=$SDSS_PASSWORD https://data.sdss.org/sas/apogeework/apogee/spectro/redux/r8/stars/l31c/l31c.2/cannon/apogee-dr14-giants-xh-censor.model
+cd ../../../../../../../
+cd data/dr14/apogee/spectro/redux/r8/stars/
+mkdir -p l31c.2/l31c.2/
+cd l31c.2/
+rsync -aLvz --include "[0-9]*/" \
+    --include "aspcapStar-r*-*.fits" --exclude "*"\
+    --prune-empty-dirs --progress \
+    rsync://data.sdss.org/dr14/apogee/spectro/redux/r8/stars/l31c/l31c.2/ l31c.2/
