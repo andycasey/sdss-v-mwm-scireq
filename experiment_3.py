@@ -1,8 +1,6 @@
 
 """
-Experiment 1: Can we make restrict the amount of information in abundance
-              correlations by limiting the abundance coefficients to be
-              negative, and removing abundance cross-terms from the vectorizer?
+Experiment 3: Using censoring and a restricted cannon model
 """
 
 import numpy as np
@@ -50,4 +48,33 @@ model = tc.restricted.RestrictedCannonModel(
     dispersion=vacuum_wavelengths, censors=censors,
     theta_bounds=dict([(ln, (None, 0)) for ln in label_names if ln.endswith("_FE")]))
 model.train(**train_kwds)
+model.write(os.path.join(OUTPUT_PATH, "RestrictedModel_with_aspcap_windows.model"),
+            overwrite=True)
+
+
+# Plot theta.
+fig = tc.plot.theta(model, indices=np.arange(len(label_names) + 1))
+fig.set_figheight(20)
+fig.tight_layout()
+fig.subplots_adjust(hspace=0, wspace=0)
+fig.savefig(os.path.join(OUTPUT_PATH, "RestrictedModel_with_aspcap_windows_restricted_theta.pdf"), dpi=300)
+
+
+# Do one-to-one.
+oto_labels, oto_cov, oto_meta = model.test(
+    training_set_flux, training_set_ivar, **test_kwds)
+
+fig = tc.plot.one_to_one(model, oto_labels)
+fig.set_figheight(40)
+fig.subplots_adjust(wspace=0, hspace=0)
+fig.savefig(os.path.join(OUTPUT_PATH, "RestrictedModel_with_aspcap_windows_restricted_one_to_one.pdf"), dpi=300)
+
+
+# Run the model on all visits and plot dispersion as a function of S/N value.
+snr, combined_snr, label_difference, filename = precision_from_repeat_visits(
+    model, N_comparisons=10000, test_kwds=test_kwds)
+
+with open(os.path.join(OUTPUT_PATH, "RestrictedModel_with_aspcap_windows_precision_snr.pkl"), "wb") as fp:
+    pickle.dump((snr, combined_snr, label_difference, filename), fp)
+
 
