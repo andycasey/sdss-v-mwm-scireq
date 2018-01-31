@@ -31,8 +31,8 @@ Experiments
 - [X] Is there weirdness going on because labels are so similar? **Yes: REMOVE THEM&**
 - [X] Map performance on individual visits with a trained model where we are confident that there is no weirdness going on
 - [X] Limit correlated information by prohibiting negative `:math:\theta` coefficients for absorption lines (which would add emission to the spectrum)
-- [ ] Test with and without windows
+- [X] Test with and without windows
 - [ ] Test with windows and regularization
-- [ ] Look to see if a special covariance structure is warranted for prohibiting correlated information between elements 
-- [ ] Take partial derivatives of synthetic spectra? 
-- [ ] Train using the ASPCAP best-fitting spectra for each star instead of the model.
+- [ ] Test with windows and RestrictedCannon
+- [ ] Train using the ASPCAP best-fitting spectra for each star instead of data
+

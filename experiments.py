@@ -28,7 +28,8 @@ train_kwds = dict(op_method="l_bfgs_b", op_kwds=dict(factr=1e12, pgtol=1e-5),
                   threads=1)
 
 
-def setup_training_set(filename="apogee-dr14-giants-xh-censor-training-set.fits"):
+def setup_training_set(filename="apogee-dr14-giants-xh-censor-training-set.fits",
+    full_output=True):
 
     training_set_labels = Table.read(
         os.path.join(config["CANNON_DR14_DIR"], filename))
@@ -57,6 +58,9 @@ def setup_training_set(filename="apogee-dr14-giants-xh-censor-training-set.fits"
         print(i)
 
 
+    if full_output:
+        return (vacuum_wavelength, training_set_labels, training_set_flux,
+            training_set_ivar)
     return (training_set_labels, training_set_flux, training_set_ivar)
 
 
