@@ -32,7 +32,7 @@ Experiments
 - [X] Map performance on individual visits with a trained model where we are confident that there is no weirdness going on
 - [X] Limit correlated information by prohibiting negative `:math:\theta` coefficients for absorption lines (which would add emission to the spectrum)
 - [X] Test with and without windows
-- [ ] Test with windows and regularization
 - [ ] Test with windows and RestrictedCannon
+- [ ] Test with windows and regularization
 - [ ] Train using the ASPCAP best-fitting spectra for each star instead of data
 
