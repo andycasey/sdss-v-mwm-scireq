@@ -9,7 +9,7 @@ import thecannon as tc
 import thecannon.continuum
 
 from apogee import config
-from apogee.io import read_spectrum
+from apogee.io import read_spectrum, read_aspcapstar_spectrum
 
 
 # Useful and common keywords.
@@ -57,6 +57,48 @@ def setup_training_set(filename="apogee-dr14-giants-xh-censor-training-set.fits"
 
         print(i)
 
+
+    if full_output:
+        return (vacuum_wavelength, training_set_labels, training_set_flux,
+            training_set_ivar)
+    return (training_set_labels, training_set_flux, training_set_ivar)
+
+
+def setup_training_set_from_aspcap(
+    filename="apogee-dr14-giants-xh-censor-training-set.fits",
+    full_output=True, return_model_spectrum=True, continuum_normalize=True):
+
+    training_set_labels = Table.read(
+        os.path.join(config["CANNON_DR14_DIR"], filename))
+
+    # Load in fluxes and inverse variances.
+    N_pixels = 8575 # Number of pixels per APOGEE spectrum.
+    N_training_set_stars = len(training_set_labels)
+
+    training_set_flux = np.ones((N_training_set_stars, N_pixels))
+    training_set_ivar = np.zeros_like(training_set_flux)
+
+
+    for i, star in enumerate(training_set_labels):
+
+        # Load in the spectrum.
+        try:
+            vacuum_wavelength, flux, ivar, metadata = read_aspcapstar_spectrum(
+                star["LOCATION_ID"], star["APOGEE_ID"], return_model_spectrum=return_model_spectrum)
+        except:
+            print("FAILED ON {}".format(i))
+            continue
+
+        if not continuum_normalize:
+            normalized_flux, normalized_ivar = flux, ivar
+        else:
+            normalized_flux, normalized_ivar, continuum, meta = tc.continuum.normalize(
+                vacuum_wavelength, flux, ivar, **continuum_kwds)
+
+        training_set_flux[i, :] = normalized_flux
+        training_set_ivar[i, :] = normalized_ivar
+
+        print(i)
 
     if full_output:
         return (vacuum_wavelength, training_set_labels, training_set_flux,

@@ -6,6 +6,12 @@ from glob import glob
 
 from .config import config
 
+def get_vacuum_wavelength_array(hdu):
+
+    P = hdu.header.get("NWAVE", hdu.header.get("NAXIS1", 8575))
+    crval, cdelt = (hdu.header["CRVAL1"], hdu.header["CDELT1"])
+    vacuum_wavelength = 10**(crval + cdelt * np.arange(P))
+    return vacuum_wavelength
 
 def get_spectrum_path(telescope, field, location_id, filename):
     """
@@ -41,6 +47,47 @@ def get_spectrum_path(telescope, field, location_id, filename):
             break
 
     return path
+    
+def get_aspcapstar_spectrum_path(location_id, apogee_id):
+
+    location_id = str(location_id).strip()
+    apogee_id = apogee_id.strip()
+    if "/" in "".join([location_id, apogee_id]):
+        raise ValueError("location_id and apogee_id cannot contain slashes (/)")
+
+    filename = "aspcapStar-r8-l31c.2-{}.fits".format(apogee_id)
+    path = os.path.join(config["ASPCAP_DR14_DIR"], location_id, filename)
+
+    return path
+
+
+
+def read_aspcapstar_spectrum(location_id, apogee_id, return_model_spectrum=False,
+    full_output=False, **kwargs):
+
+    path = get_aspcapstar_spectrum_path(location_id, apogee_id)
+
+    image = fits.open(path)
+    vacuum_wavelength = get_vacuum_wavelength_array(image[1])
+
+    if return_model_spectrum:
+        flux = image[3].data
+        ivar = 10000 * np.ones_like(flux) # sigma = 0.01
+    
+    else:
+        flux = image[1].data
+        ivar = (image[2].data)**-2
+
+    image.close()
+    
+    metadata = dict(
+        location_id=location_id, apogee_id=apogee_id, path=path,
+        is_model_spectrum=return_model_spectrum)
+
+    if full_output:
+        raise NotImplementedError
+
+    return (vacuum_wavelength, flux, ivar, metadata)
     
 
 def read_spectrum(telescope, field_id, location_id, filename, combined=True,
@@ -87,9 +134,7 @@ def read_spectrum(telescope, field_id, location_id, filename, combined=True,
     #with fits.open(path) as image:
 
     # Build wavelength array first.
-    P = image[0].header["NWAVE"]
-    crval, cdelt = (image[0].header["CRVAL1"], image[0].header["CDELT1"])
-    vacuum_wavelength = 10**(crval + cdelt * np.arange(P))
+    vacuum_wavelength = get_vacuum_wavelength_array(image[0])
 
     if combined:
         flux_start = available_methods.index(combined_weighting_method)
@@ -105,7 +150,7 @@ def read_spectrum(telescope, field_id, location_id, filename, combined=True,
     small_value = kwargs.pop("small_value", 1e-20)
     ivar[ivar <= small_value] = 0
 
-    if combined: assert flux.size >= P
+    if combined: assert flux.size >= vacuum_wavelength.size
     assert flux.shape == ivar.shape
 
     assert np.all(np.isfinite(flux))

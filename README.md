@@ -33,9 +33,9 @@ Experiments
 - [X] Limit correlated information by prohibiting negative `:math:\theta` coefficients for absorption lines (which would add emission to the spectrum)
 - [X] Test with and without windows
 - [X] Test with windows and RestrictedCannon
-- [ ] Test with windows and regularization
-- [ ] Test with RestrictedCannon and regularization
-- [ ] Train using the ASPCAP best-fitting spectra for each star instead of data
+- [ ] ~~Test with windows and regularization~~
+- [X] Test with RestrictedCannon and regularization
+- [X] Train using the ASPCAP best-fitting spectra for each star instead of data
 - [ ] Script to make all comparison plots
 
 Code
@@ -44,4 +44,5 @@ Code
 - [ ] tc.plot.theta to show censored regions (if they exist)
 - [ ] tc.plot.theta to show bounded regions (if they exist)
 - [ ] tc.plot.one_to_one to show in square format, if requested
-- [ ] 
+- [ ] new progressbar
+- [ ] Move SDSS-V MWM sci-req to SDSS github repository.

@@ -1,6 +1,7 @@
 
 """
-Experiment 4: Use RestrictedCannonModel and regularization.
+Experiment 5: Train using ASPCAP-best-fitting spectra, and run using ASPCAP-best
+-fitting spectra.
 """
 
 import logging
@@ -12,12 +13,12 @@ import thecannon as tc
 import thecannon.restricted
 
 from apogee.aspcap import element_window
-from experiments import setup_training_set, precision_from_repeat_visits
+from experiments import setup_training_set_from_aspcap, precision_from_repeat_visits
 
 # ---------------- #
 
 OVERWRITE = False
-OUTPUT_PATH = "experiments/4"
+OUTPUT_PATH = "experiments/5"
 
 test_kwds = dict()
 train_kwds = dict(threads=2, op_kwds=dict(factr=1e12, pgtol=1e-5))
@@ -31,44 +32,34 @@ label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "N_FE", "O_FE", "NA_FE",
 if not os.path.exists(OUTPUT_PATH):
     os.mkdir(OUTPUT_PATH)
 
+#vacuum_wavelengths, training_set_labels, training_set_flux, training_set_ivar \
+#    = setup_training_set(full_output=True)
+
+# Use ASPCAP best-fitting spectra to train the model.
 vacuum_wavelengths, training_set_labels, training_set_flux, training_set_ivar \
-    = setup_training_set(full_output=True)
+    = setup_training_set_from_aspcap(full_output=True,
+        return_model_spectrum=True, continuum_normalize=False)
 
 vectorizer = tc.vectorizer.PolynomialVectorizer(label_names, order=2)
 
+prefix = os.path.join(OUTPUT_PATH, "aspcap_trained")
+model_path = "{}.model".format(prefix)
 
-for regularization in np.logspace(-3, 5, 30):
-
-    prefix = "RestrictedModel_regularized_10^{:.2f}".format(np.log10(regularization))
-    model_path = os.path.join(OUTPUT_PATH, "{}.model".format(prefix))
-
-    if os.path.exists(model_path) and not OVERWRITE:
-        logging.info("Skipping because {} exists and not overwriting".format(
-            model_path))
-
-    else:
-        bounded_model = tc.restricted.RestrictedCannonModel(
-            training_set_labels, training_set_flux, training_set_ivar, vectorizer,
-            regularization=regularization, theta_bounds=\
-                dict([(ln, (None, 0)) for ln in label_names if ln.endswith("_FE")]))
-        bounded_model.train(**train_kwds)
-        bounded_model.write(model_path, overwrite=OVERWRITE)
-
-    prefix = "CannonModel_regularized_10^{:.2f}".format(np.log10(regularization))
-    model_path = os.path.join(OUTPUT_PATH, "{}.model".format(prefix))
-
-    if os.path.exists(model_path) and not OVERWRITE:
-        logging.info("Skipping because {} exists and not overwriting".format(
-            model_path))
-
-    else:    
-        model = tc.restricted.RestrictedCannonModel(
-            training_set_labels, training_set_flux, training_set_ivar, vectorizer,
-            regularization=regularization)
-        model.train(**train_kwds)
-        model.write(model_path, overwrite=OVERWRITE)
+model = tc.restricted.RestrictedCannonModel(
+    training_set_labels, training_set_flux, training_set_ivar, vectorizer)
+model.train(**train_kwds)
+model.write(model_path, overwrite=OVERWRITE)
 
 
+# Do one-to-one.
+oto_labels, oto_cov, oto_meta = model.test(
+    training_set_flux, training_set_ivar, **test_kwds)
+
+fig = tc.plot.one_to_one(model, oto_labels)
+fig.set_figheight(40)
+fig.subplots_adjust(wspace=0, hspace=0)
+fig.savefig(os.path.join(OUTPUT_PATH, "{}_oto.pdf".format(prefix)),
+            dpi=300)
 
 
 raise a
