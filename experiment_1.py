@@ -30,7 +30,7 @@ label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "CI_FE", "N_FE", "O_FE", "NA_FE",
 if not os.path.exists(OUTPUT_PATH):
     os.mkdir(OUTPUT_PATH)
 
-training_set_labels, training_set_flux, training_set_ivar = setup_training_set()
+vacuum_wavelengths, training_set_labels, training_set_flux, training_set_ivar = setup_training_set()
 
 
 """
@@ -77,6 +77,7 @@ with open(os.path.join(OUTPUT_PATH, "precision_snr_wb.pkl"), "wb") as fp:
 Train a new model without abundance cross-terms.
 """
 
+"""
 # Restrict the vectorizer to only use cross-terms with TEFF and LOGG:
 new_terms = \
     [t for t in vectorizer.get_human_readable_label_vector().split(" + ")[1:]
@@ -111,7 +112,7 @@ woct_snr, woct_combined_snr, woct_label_difference, woct_filename = \
 with open(os.path.join(OUTPUT_PATH, "precision_snr_woct.pkl"), "wb") as fp:
     pickle.dump(
         (woct_snr, woct_combined_snr, woct_label_difference, woct_filename), fp)
-
+"""
 
 """
 Train a new model using bounds on the abundance label coefficients,
@@ -144,7 +145,7 @@ fig.savefig(os.path.join(OUTPUT_PATH, "wb_and_wo_ct_one_to_one.pdf"), dpi=300)
 wb_wo_ct_snr, wb_wo_ct_combined_snr, wb_wo_ct_label_difference, wb_wo_ct_filename \
     = precision_from_repeat_visits(model_wb_and_wo_ct, N_comparisons=10000, test_kwds=test_kwds)
 
-with open(os.path.join(OUTPUT_PATH, "precision_snr_wb.pkl"), "wb") as fp:
+with open(os.path.join(OUTPUT_PATH, "precision_snr_wb_and_wo_ct.pkl"), "wb") as fp:
     pickle.dump((wb_wo_ct_snr, wb_wo_ct_combined_snr, wb_wo_ct_label_difference, wb_wo_ct_filename), fp)
 
 

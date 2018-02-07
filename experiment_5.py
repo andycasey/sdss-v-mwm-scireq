@@ -17,7 +17,7 @@ from experiments import setup_training_set_from_aspcap, precision_from_repeat_vi
 
 # ---------------- #
 
-OVERWRITE = False
+OVERWRITE = True
 OUTPUT_PATH = "experiments/5"
 
 test_kwds = dict()
@@ -58,8 +58,51 @@ oto_labels, oto_cov, oto_meta = model.test(
 fig = tc.plot.one_to_one(model, oto_labels)
 fig.set_figheight(40)
 fig.subplots_adjust(wspace=0, hspace=0)
-fig.savefig(os.path.join(OUTPUT_PATH, "{}_oto.pdf".format(prefix)),
-            dpi=300)
+fig.savefig("{}_oto2.pdf".format(prefix), dpi=300)
+
+
+
+# Run the model on all visits and plot dispersion as a function of S/N value.
+# THIS IS WRONG THING TO DO BUT WE DO IT FOR FUN.
+snr, combined_snr, label_difference, filename = precision_from_repeat_visits(
+    model, N_comparisons=10000, test_kwds=test_kwds)
+
+with open(os.path.join(OUTPUT_PATH, "aspcap_trained_snr_precision.pkl"), "wb") as fp:
+    pickle.dump((snr, combined_snr, label_difference, filename), fp)
+
+
+
+
+
+
+prefix = os.path.join(OUTPUT_PATH, "aspcap_restricted_trained")
+model_path = "{}.model".format(prefix)
+
+model = tc.restricted.RestrictedCannonModel(
+    training_set_labels, training_set_flux, training_set_ivar, vectorizer,
+    theta_bounds=dict([(ln, (None, 0)) for ln in label_names if ln.endswith("_FE")]))
+model.train(**train_kwds)
+model.write(model_path, overwrite=OVERWRITE)
+
+
+# Do one-to-one.
+oto_labels, oto_cov, oto_meta = model.test(
+    training_set_flux, training_set_ivar, **test_kwds)
+
+fig = tc.plot.one_to_one(model, oto_labels)
+fig.set_figheight(40)
+fig.subplots_adjust(wspace=0, hspace=0)
+fig.savefig("{}_oto2.pdf".format(prefix), dpi=300)
+
+
+# Run the model on all visits and plot dispersion as a function of S/N value.
+# THIS IS WRONG THING TO DO BUT WE DO IT FOR FUN.
+snr, combined_snr, label_difference, filename = precision_from_repeat_visits(
+    model, N_comparisons=10000, test_kwds=test_kwds)
+
+with open(os.path.join(OUTPUT_PATH, "aspcap_restricted_trained_snr_precision.pkl"), "wb") as fp:
+    pickle.dump((snr, combined_snr, label_difference, filename), fp)
+
 
 
 raise a
