@@ -77,7 +77,6 @@ with open(os.path.join(OUTPUT_PATH, "precision_snr_wb.pkl"), "wb") as fp:
 Train a new model without abundance cross-terms.
 """
 
-"""
 # Restrict the vectorizer to only use cross-terms with TEFF and LOGG:
 new_terms = \
     [t for t in vectorizer.get_human_readable_label_vector().split(" + ")[1:]
@@ -112,7 +111,7 @@ woct_snr, woct_combined_snr, woct_label_difference, woct_filename = \
 with open(os.path.join(OUTPUT_PATH, "precision_snr_woct.pkl"), "wb") as fp:
     pickle.dump(
         (woct_snr, woct_combined_snr, woct_label_difference, woct_filename), fp)
-"""
+
 
 """
 Train a new model using bounds on the abundance label coefficients,

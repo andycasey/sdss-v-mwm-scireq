@@ -64,6 +64,42 @@ def setup_training_set(filename="apogee-dr14-giants-xh-censor-training-set.fits"
     return (training_set_labels, training_set_flux, training_set_ivar)
 
 
+
+def training_set_data(stars):
+
+    # Load in fluxes and inverse variances.
+    N_pixels = 8575 # Number of pixels per APOGEE spectrum.
+    N_training_set_stars = len(stars)
+
+    training_set_flux = np.ones((N_training_set_stars, N_pixels))
+    training_set_ivar = np.zeros_like(training_set_flux)
+
+    for i, star in enumerate(stars):
+
+        # Load in the spectrum.
+        try:
+            vacuum_wavelength, flux, ivar, metadata = read_spectrum(
+                star["TELESCOPE"], star["FIELD"], star["LOCATION_ID"], star["FILE"])
+        except:
+            logging.warn("Error on star {}".format(i))
+            continue
+            
+
+        # Continuum normalize.
+        normalized_flux, normalized_ivar, continuum, meta \
+            = tc.continuum.normalize(vacuum_wavelength, flux, ivar,
+                                     **continuum_kwds)
+
+        training_set_flux[i, :] = normalized_flux
+        training_set_ivar[i, :] = normalized_ivar
+
+        print(i)
+
+    return (vacuum_wavelength, training_set_flux, training_set_ivar)
+
+
+
+
 def setup_training_set_from_aspcap(
     filename="apogee-dr14-giants-xh-censor-training-set.fits",
     full_output=True, return_model_spectrum=True, continuum_normalize=True):

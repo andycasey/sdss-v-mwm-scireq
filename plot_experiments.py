@@ -18,15 +18,16 @@ default_kwds = dict(
 )
 show_kwds = dict(
     scatter_kwds=dict(visible=False),
-    fill_between_kwds=dict(visible=True)
+    fill_between_kwds=dict(visible=False)
 )
 
 experiments = [
-    ["0", "experiments/0/experiment_0.model", "experiments/0/precision_wrt_snr.pkl", show_kwds],
-    ["1a", "experiments/1/model_with_bounds.model", "experiments/1/precision_snr_wb.pkl", default_kwds],
-    ["1b", "experiments/1/model_wo_ct.model", "experiments/1/precision_snr_woct.pkl", default_kwds],
-    ["2", "experiments/2/aspcap_censored.model", "experiments/2/aspcap_censored_precision_snr.pkl", show_kwds],
-    ["3", "experiments/3/RestrictedModel_with_aspcap_windows.model", "experiments/3/RestrictedModel_with_aspcap_windows_precision_snr.pkl", default_kwds],
+    ["Baseline", "experiments/0/experiment_0.model", "experiments/0/precision_wrt_snr.pkl", show_kwds],
+    ["RestrictedModel", "experiments/1/model_with_bounds.model", "experiments/1/precision_snr_wb.pkl", default_kwds],
+    ["CannonModel without crossterms", "experiments/1/model_wo_ct.model", "experiments/1/precision_snr_woct.pkl", default_kwds],
+    ["RestrictedCannonModel without crossterms", "experiments/1/model_wb_and_wo_ct.model", "experiments/1/precision_snr_wb_and_wo_ct.pkl", default_kwds],
+    ["ASPCAP-censored CannonModel", "experiments/2/aspcap_censored.model", "experiments/2/aspcap_censored_precision_snr.pkl", show_kwds],
+    ["ASPCAP-censored RestrictedModel", "experiments/3/RestrictedModel_with_aspcap_windows.model", "experiments/3/RestrictedModel_with_aspcap_windows_precision_snr.pkl", default_kwds],
 ]
     
 
