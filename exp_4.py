@@ -31,18 +31,15 @@ from apogee import config, linelist
 from apogee.io import read_spectrum
 
 from experiments import get_balanced_training_set, precision_from_repeat_visits
-
-label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "CI_FE", "N_FE", "O_FE", "NA_FE",
+from utils import atomic_number
+label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "N_FE", "O_FE", "NA_FE",
                "MG_FE", "AL_FE", "SI_FE", "P_FE", "S_FE", "K_FE", "CA_FE",
                "TI_FE", "V_FE", "CR_FE", "MN_FE", "CO_FE", "NI_FE"]
 label_names_for_balancing = ["TEFF", "LOGG", "FE_H", "NA_FE", "O_FE", "MG_FE",
                              "AL_FE"]
 
-#vacuum_wavelengths, training_set_labels, training_set_flux, training_set_ivar \
-#    = get_balanced_training_set(label_names, label_names_for_balancing)
-with open("experiments/2/training_set.pkl", "rb") as fp:
-    vacuum_wavelengths, training_set_labels, training_set_flux, training_set_ivar \
-        = pickle.load(fp)
+vacuum_wavelengths, training_set_labels, training_set_flux, training_set_ivar \
+    = get_balanced_training_set(label_names, label_names_for_balancing)
 
 
 # ----------- #
