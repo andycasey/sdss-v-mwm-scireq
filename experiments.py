@@ -65,7 +65,10 @@ def setup_training_set(filename="apogee-dr14-giants-xh-censor-training-set.fits"
 
 
 
-def training_set_data(stars):
+def training_set_data(stars, **kwargs):
+
+    kwds = continuum_kwds.copy()
+    kwds.update(kwargs)
 
     # Load in fluxes and inverse variances.
     N_pixels = 8575 # Number of pixels per APOGEE spectrum.
@@ -87,13 +90,20 @@ def training_set_data(stars):
 
         # Continuum normalize.
         normalized_flux, normalized_ivar, continuum, meta \
-            = tc.continuum.normalize(vacuum_wavelength, flux, ivar,
-                                     **continuum_kwds)
+            = tc.continuum.normalize(vacuum_wavelength, flux, ivar, **kwds)
 
         training_set_flux[i, :] = normalized_flux
         training_set_ivar[i, :] = normalized_ivar
 
         print(i)
+
+    pixel_is_used = np.zeros(N, dtype=bool)
+    for start, end in kwds["regions"]:
+        region_mask = (end >= vacuum_wavelength) * (vacuum_wavelength >= start)
+        pixel_is_used[region_mask] = True
+
+    training_set_flux[:, ~pixel_is_used] = 1.0
+    training_set_ivar[:, ~pixel_is_used] = 0.0
 
     return (vacuum_wavelength, training_set_flux, training_set_ivar)
 

@@ -26,6 +26,16 @@ OUTPUT_PATH = "experiments/7"
 
 test_kwds = dict()
 train_kwds = dict(op_kwds=dict(factr=1e12, pgtol=1e-5))
+continuum_kwds = dict(
+    regions=[
+        (15140.0, 15809.0),
+        (15860.0, 16432.0),
+        (16475.5, 16952.0)
+    ],
+    continuum_pixels=np.loadtxt(os.path.join(
+        config["CANNON_DR14_DIR"], "continuum_pixels.list"), dtype=int),
+    L=1400, order=3, fill_value=np.nan)
+
 
 if not os.path.exists(OUTPUT_PATH):
     os.mkdir(OUTPUT_PATH)
@@ -138,7 +148,7 @@ fig.savefig(os.path.join(OUTPUT_PATH, "validation_training_sets.pdf"), dpi=300)
 # Construct training set.
 training_set_labels = stars[training_set]
 vacuum_wavelengths, training_set_flux, training_set_ivar \
-    = training_set_data(training_set_labels)
+    = training_set_data(training_set_labels, **continuum_kwds)
 
 
 
@@ -147,6 +157,7 @@ for i in range(100):
     ax.plot(vacuum_wavelengths, training_set_flux[i], c='k', alpha=0.01)
 
 
+raise a
 
 # Train a RestrictedCannonModel
 vectorizer = tc.vectorizer.PolynomialVectorizer(label_names, order=2)
@@ -167,9 +178,6 @@ fig.tight_layout()
 fig.subplots_adjust(hspace=0, wspace=0)
 fig.savefig(os.path.join(OUTPUT_PATH, "restricted_theta.pdf"), dpi=300)
 
-raise a
-
-
 # Do one-to-one.
 oto_labels, oto_cov, oto_meta = model.test(
     training_set_flux, training_set_ivar, **test_kwds)
@@ -179,6 +187,8 @@ fig.set_figheight(40)
 fig.subplots_adjust(wspace=0, hspace=0)
 fig.savefig(os.path.join(OUTPUT_PATH, "restricted_one_to_one.pdf"), dpi=300)
 
+
+raise a
 
 # Run test-step on globular cluster star spectra.
 
