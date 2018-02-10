@@ -2,16 +2,16 @@
 """
 Using our balanced training set:
 
-[ ] Train a restricted Cannon model.
+[X] Train a restricted Cannon model.
 
 [X] Check the initial theta values for restricted Cannon models and make sure
     that they are starting at bounded values.
 
-[ ] Plot theta.
+[X] Plot theta.
 
-[ ] Plot one-to-one.
+[X] Plot one-to-one.
 
-[ ] Calculate precision as a function of SNR.
+[X] Calculate precision as a function of SNR.
 """
 
 
