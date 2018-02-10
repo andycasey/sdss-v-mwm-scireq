@@ -12,12 +12,11 @@ from apogee import config
 from apogee.io import read_spectrum, read_aspcapstar_spectrum
 
 
-# Useful and common keywords.
 continuum_kwds = dict(
     regions=[
-        (15140, 15812),
-        (15857, 16437),
-        (16472, 16960)
+        (15142.0, 15807.0),
+        (15862.0, 16432.0),
+        (16475.5, 16952.0)
     ],
     continuum_pixels=np.loadtxt(os.path.join(
         config["CANNON_DR14_DIR"], "continuum_pixels.list"), dtype=int),
@@ -28,7 +27,7 @@ train_kwds = dict(op_method="l_bfgs_b", op_kwds=dict(factr=1e12, pgtol=1e-5),
                   threads=1)
 
 
-def setup_training_set(filename="apogee-dr14-giants-xh-censor-training-set.fits",
+def setup_training_set(filename="apogee-dr14-giants-training-set.fits",
     full_output=True):
 
     training_set_labels = Table.read(
@@ -259,3 +258,87 @@ def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None,
     visit_label_difference = np.array(visit_label_difference)
 
     return (visit_snr, combined_snr, visit_label_difference, filenames)
+
+
+def get_my_balanced_training_set():
+
+    stars = Table.read(
+        os.path.join(config["APOGEE_DR14_DIR"], "allStar-l31c.2.fits"))
+
+    validation_set = (stars["SNR"] > 200) \
+                    * (stars["ASPCAPFLAG"] == 0) \
+                    * (stars["ASPCAP_CHI2"] < 50) \
+                    * ~apogee.bitmasks.has_any_starflag(stars["STARFLAG"], [
+                        "PERSIST_HIGH", "PERSIST_JUMP_POS", "PERSIST_JUMP_NEG",
+                        "SUSPECT_BROAD_LINES", "SUSPECT_RV_COMBINATION",
+                        "VERY_BRIGHT_NEIGHBOUR"
+                    ])
+
+
+    m, c = (2.6/1100, -7.70)
+    logg_criteria = stars["TEFF"] * m + c
+    validation_set *= (stars["LOGG"] <= logg_criteria)
+
+    # We want stars with abundances.....
+    # We can get the other abundances, but these are the ones we want to verify
+    # our model with.
+    label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "N_FE", "O_FE", "NA_FE", 
+                   "MG_FE", "AL_FE"]
+
+    original_validation_set = validation_set.copy()
+    for label_name in label_names:
+        
+        removed = (stars[label_name][original_validation_set] < -5000)
+        print("We removed {} good stars due to missing {}".format(
+            sum(removed), label_name))
+
+        validation_set *= (stars[label_name] > -5000)
+        
+
+    # Let's create a balanced training set of about 1,000 stars.
+    N_bins = 10
+
+    uln = ["TEFF", "LOGG", "FE_H", "O_FE", "NA_FE", "MG_FE", "AL_FE"]
+    unbalanced_data = np.array([stars[ln][validation_set] for ln in uln]).T
+
+    H, bins = np.histogramdd(unbalanced_data, N_bins)
+    indices = np.array([np.digitize(c, b) for c, b in zip(unbalanced_data.T, bins)]) - 1
+
+    assert np.sum(np.all(indices.T == np.array(np.where(H == H.max())).flatten(), axis=1)) == H.max()
+
+    """
+    Here we will just take 1 star from every multidimensional bin that has a count
+    of at least 1. That gives us some 5000 stars.
+    If you want a larger sample size then you may need to over-sample some bins,
+    or accept that you will have a *slightly* "unbalanced" data set (but far more
+    balanced than what it was to begin with).
+    """
+
+    np.random.seed(42)
+
+    use_bins = np.array(np.where(H >= 1)).T
+    in_training_set = np.zeros(len(unbalanced_data), dtype=bool)
+
+    for i, bin_indices in enumerate(use_bins):
+
+        star_indices = np.where(np.all(indices.T == bin_indices, axis=1))[0]
+        print(i, star_indices.size)
+
+        if 1 > star_indices.size:
+            print("What the fuck?")
+            continue
+
+        in_training_set[np.random.choice(star_indices, size=1)] = True
+
+
+    star_indices = np.where(validation_set)[0][in_training_set]
+    training_set = np.zeros(len(stars), dtype=bool)
+    training_set[star_indices] = True
+
+    # Construct training set.
+    # Construct training set.
+    training_set_labels = stars[training_set]
+    vacuum_wavelengths, training_set_flux, training_set_ivar \
+        = training_set_data(training_set_labels, **continuum_kwds)
+
+    return (vacuum_wavelengths, training_set_labels, training_set_flux, training_set_ivar)
