@@ -97,7 +97,7 @@ def training_set_data(stars, **kwargs):
 
         print(i)
 
-    pixel_is_used = np.zeros(N, dtype=bool)
+    pixel_is_used = np.zeros(P, dtype=bool)
     for start, end in kwds["regions"]:
         region_mask = (end >= vacuum_wavelength) * (vacuum_wavelength >= start)
         pixel_is_used[region_mask] = True

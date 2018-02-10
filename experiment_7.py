@@ -5,7 +5,9 @@ Experiment 7:   Construct a training set for APOGEE DR14.
                 regularisation?).
                 Examine how we perform on globular clusters compared to ASPCAP.
 """
-
+import matplotlib
+matplotlib.use("agg")
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pickle
