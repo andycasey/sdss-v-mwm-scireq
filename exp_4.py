@@ -15,6 +15,9 @@ Using our balanced training set:
 """
 
 
+import matplotlib
+matplotlib.use("agg")
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pickle
@@ -24,13 +27,13 @@ from astropy.table import Table
 import thecannon as tc
 import thecannon.restricted
 
-from apogee import config
+from apogee import config, linelist
 from apogee.io import read_spectrum
 
 from experiments import get_balanced_training_set, precision_from_repeat_visits
 
-label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "CI_FE", "N_FE", "O_FE", "NA_FE", 
-               "MG_FE", "AL_FE", "SI_FE", "P_FE", "S_FE", "K_FE", "CA_FE", 
+label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "CI_FE", "N_FE", "O_FE", "NA_FE",
+               "MG_FE", "AL_FE", "SI_FE", "P_FE", "S_FE", "K_FE", "CA_FE",
                "TI_FE", "V_FE", "CR_FE", "MN_FE", "CO_FE", "NI_FE"]
 label_names_for_balancing = ["TEFF", "LOGG", "FE_H", "NA_FE", "O_FE", "MG_FE",
                              "AL_FE"]
