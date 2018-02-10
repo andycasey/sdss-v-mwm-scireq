@@ -96,7 +96,7 @@ fig.savefig(os.path.join(OUTPUT_PATH, "baseline_one_to_one.pdf"))
 
 # Run the model on all visits and plot dispersion as a function of S/N value.
 snr, combined_snr, label_difference, filename = precision_from_repeat_visits(
-    model, N_comparisons=10000, test_kwds=test_kwds)
+    model, N_comparisons=1000, test_kwds=test_kwds)
 
 with open(os.path.join(OUTPUT_PATH, "baseline_precision_snr.pkl"), "wb") as fp:
     pickle.dump((snr, combined_snr, label_difference, filename), fp)

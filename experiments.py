@@ -14,9 +14,9 @@ from apogee.io import read_spectrum, read_aspcapstar_spectrum
 
 continuum_kwds = dict(
     regions=[
-        (15142.0, 15807.0),
+        (15145.0, 15807.0),
         (15862.0, 16432.0),
-        (16475.5, 16952.0)
+        (16480.0, 16952.0)
     ],
     continuum_pixels=np.loadtxt(os.path.join(
         config["CANNON_DR14_DIR"], "continuum_pixels.list"), dtype=int),
