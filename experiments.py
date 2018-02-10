@@ -8,7 +8,7 @@ from astropy.table import Table
 import thecannon as tc
 import thecannon.continuum
 
-from apogee import config
+from apogee import config, bitmasks
 from apogee.io import read_spectrum, read_aspcapstar_spectrum
 
 
@@ -260,19 +260,25 @@ def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None,
     return (visit_snr, combined_snr, visit_label_difference, filenames)
 
 
-def get_my_balanced_training_set():
+def get_balanced_training_set(label_names, label_names_for_balancing,
+    snr_min=100, max_aspcap_chi2=5, bad_starflags=None, N_bins=10, 
+    random_seed=42):
+
+    if bad_starflags is None:
+        bad_starflags =  [
+            "PERSIST_HIGH", "PERSIST_JUMP_POS", "PERSIST_JUMP_NEG",
+            "SUSPECT_BROAD_LINES", "SUSPECT_RV_COMBINATION",
+            "VERY_BRIGHT_NEIGHBOUR", "COMMISSIONING", "BAD_PIXELS",
+        ]
 
     stars = Table.read(
         os.path.join(config["APOGEE_DR14_DIR"], "allStar-l31c.2.fits"))
 
-    validation_set = (stars["SNR"] > 200) \
+    validation_set = (stars["SNR"] > snr_min) \
                     * (stars["ASPCAPFLAG"] == 0) \
-                    * (stars["ASPCAP_CHI2"] < 50) \
-                    * ~apogee.bitmasks.has_any_starflag(stars["STARFLAG"], [
-                        "PERSIST_HIGH", "PERSIST_JUMP_POS", "PERSIST_JUMP_NEG",
-                        "SUSPECT_BROAD_LINES", "SUSPECT_RV_COMBINATION",
-                        "VERY_BRIGHT_NEIGHBOUR"
-                    ])
+                    * (stars["ASPCAP_CHI2"] < max_aspcap_chi2) \
+                    * ~bitmasks.has_any_starflag(
+                        stars["STARFLAG"], bad_starflags)
 
 
     m, c = (2.6/1100, -7.70)
@@ -282,24 +288,22 @@ def get_my_balanced_training_set():
     # We want stars with abundances.....
     # We can get the other abundances, but these are the ones we want to verify
     # our model with.
-    label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "N_FE", "O_FE", "NA_FE", 
-                   "MG_FE", "AL_FE"]
-
+    
     original_validation_set = validation_set.copy()
     for label_name in label_names:
         
-        removed = (stars[label_name][original_validation_set] < -5000)
+        removed = (stars[label_name][original_validation_set] < -5000) 
         print("We removed {} good stars due to missing {}".format(
             sum(removed), label_name))
 
         validation_set *= (stars[label_name] > -5000)
-        
 
-    # Let's create a balanced training set of about 1,000 stars.
-    N_bins = 10
+        if "{}_FLAG".format(label_name) in stars.dtype.names:
+            assert not any(stars["{}_FLAG".format(label_name)] & 2**16)
 
-    uln = ["TEFF", "LOGG", "FE_H", "O_FE", "NA_FE", "MG_FE", "AL_FE"]
-    unbalanced_data = np.array([stars[ln][validation_set] for ln in uln]).T
+
+
+    unbalanced_data = np.array([stars[ln][validation_set] for ln in label_names_for_balancing]).T
 
     H, bins = np.histogramdd(unbalanced_data, N_bins)
     indices = np.array([np.digitize(c, b) for c, b in zip(unbalanced_data.T, bins)]) - 1
@@ -314,7 +318,7 @@ def get_my_balanced_training_set():
     balanced than what it was to begin with).
     """
 
-    np.random.seed(42)
+    np.random.seed(random_seed)
 
     use_bins = np.array(np.where(H >= 1)).T
     in_training_set = np.zeros(len(unbalanced_data), dtype=bool)

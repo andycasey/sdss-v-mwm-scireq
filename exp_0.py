@@ -2,13 +2,15 @@
 """
 Using DR14 training set:
 
-[ ] Train a standard Cannon model.
+[X] Train a standard Cannon model.
 
-[ ] Plot theta.
+[X] Plot theta.
 
-[ ] Plot one-to-one.
+[X] Plot one-to-one.
 
-[ ] Calculate precision as a function of SNR.
+[X] Calculate precision as a function of SNR.
+
+[ ] Show performance on globular clusters.
 """
 
 import numpy as np
@@ -51,6 +53,31 @@ label_names = ["TEFF", "LOGG", "M_H", "ALPHA_M", "FE_H", "C_FE", "CI_FE", "N_FE"
 label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "CI_FE", "N_FE", "O_FE", "NA_FE", 
                "MG_FE", "AL_FE", "SI_FE", "P_FE", "S_FE", "K_FE", "CA_FE", 
                "TI_FE", "V_FE", "CR_FE", "MN_FE", "CO_FE", "NI_FE"]
+
+
+# Plot the labels...
+fig, ax = plt.subplots()
+scat = ax.scatter(training_set_labels["TEFF"], training_set_labels["LOGG"],
+    c=training_set_labels["FE_H"], s=1)
+cbar = plt.colorbar(scat)
+cbar.set_label("[Fe/H]")
+ax.set_xlabel("TEFF")
+ax.set_ylabel("LOGG")
+fig.tight_layout()
+fig.savefig(os.path.join(OUTPUT_PATH, "training_set_teff_logg.pdf"), dpi=300)
+
+for label_name in label_names[3:]:
+    fig, ax = plt.subplots()
+    ax.scatter(training_set_labels["FE_H"], training_set_labels[label_name],
+        c=training_set_labels["SNR"], s=1)
+    ax.set_xlabel("[FE/H]")
+    ax.set_ylabel(label_name)
+    fig.tight_layout()
+    fig.savefig(
+        os.path.join(OUTPUT_PATH, "training_set_{}.pdf".format(label_name)),
+        dpi=300)
+
+
 vectorizer = tc.vectorizer.PolynomialVectorizer(label_names, order=2)
 
 model = tc.CannonModel(
