@@ -48,15 +48,18 @@ def setup_training_set(filename="apogee-dr14-giants-xh-censor-training-set.fits"
         vacuum_wavelength, flux, ivar, metadata = read_spectrum(
             star["TELESCOPE"], star["FIELD"], star["LOCATION_ID"], star["FILE"])
 
-        # Continuum normalize.
-        normalized_flux, normalized_ivar, continuum, meta = tc.continuum.normalize(
-            vacuum_wavelength, flux, ivar, **continuum_kwds)
-
-        training_set_flux[i, :] = normalized_flux
-        training_set_ivar[i, :] = normalized_ivar
+        training_set_flux[i, :] = flux
+        training_set_ivar[i, :] = ivar
 
         print(i)
 
+    # Continuum normalize.
+    normalized_flux, normalized_ivar, continuum, meta = tc.continuum.normalize(
+        vacuum_wavelength, training_set_flux, training_set_ivar, 
+        **continuum_kwds)
+
+    training_set_flux = normalized_flux
+    training_set_ivar = normalized_ivar
 
     if full_output:
         return (vacuum_wavelength, training_set_labels, training_set_flux,
@@ -97,7 +100,7 @@ def training_set_data(stars, **kwargs):
 
         print(i)
 
-    pixel_is_used = np.zeros(P, dtype=bool)
+    pixel_is_used = np.zeros(N_pixels, dtype=bool)
     for start, end in kwds["regions"]:
         region_mask = (end >= vacuum_wavelength) * (vacuum_wavelength >= start)
         pixel_is_used[region_mask] = True

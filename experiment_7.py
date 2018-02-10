@@ -153,13 +153,12 @@ vacuum_wavelengths, training_set_flux, training_set_ivar \
     = training_set_data(training_set_labels, **continuum_kwds)
 
 
-
+"""
 fig, ax = plt.subplots()
 for i in range(100):
     ax.plot(vacuum_wavelengths, training_set_flux[i], c='k', alpha=0.01)
+"""
 
-
-raise a
 
 # Train a RestrictedCannonModel
 vectorizer = tc.vectorizer.PolynomialVectorizer(label_names, order=2)

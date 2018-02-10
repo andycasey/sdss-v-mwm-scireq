@@ -26,6 +26,15 @@ OUTPUT_PATH = "experiments/8"
 
 test_kwds = dict()
 train_kwds = dict(op_kwds=dict(factr=1e12, pgtol=1e-5))
+continuum_kwds = dict(
+    regions=[
+        (15140.0, 15809.0),
+        (15860.0, 16432.0),
+        (16475.5, 16952.0)
+    ],
+    continuum_pixels=np.loadtxt(os.path.join(
+        config["CANNON_DR14_DIR"], "continuum_pixels.list"), dtype=int),
+    L=1400, order=3, fill_value=np.nan)
 
 if not os.path.exists(OUTPUT_PATH):
     os.mkdir(OUTPUT_PATH)
@@ -135,9 +144,10 @@ fig.savefig(os.path.join(OUTPUT_PATH, "validation_training_sets.pdf"), dpi=300)
 
 
 # Construct training set.
+# Construct training set.
 training_set_labels = stars[training_set]
 vacuum_wavelengths, training_set_flux, training_set_ivar \
-    = training_set_data(training_set_labels)
+    = training_set_data(training_set_labels, **continuum_kwds)
 
 
 fig, ax = plt.subplots()
@@ -147,8 +157,6 @@ for i in range(100):
 
 
 
-
-raise a
 
 
 # Train a RestrictedCannonModel
