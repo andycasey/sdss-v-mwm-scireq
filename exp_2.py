@@ -31,7 +31,7 @@ from apogee.io import read_spectrum
 
 from experiments import get_balanced_training_set, precision_from_repeat_visits
 
-label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "CI_FE", "N_FE", "O_FE", "NA_FE",
+label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "N_FE", "O_FE", "NA_FE",
                "MG_FE", "AL_FE", "SI_FE", "P_FE", "S_FE", "K_FE", "CA_FE",
                "TI_FE", "V_FE", "CR_FE", "MN_FE", "CO_FE", "NI_FE"]
 label_names_for_balancing = ["TEFF", "LOGG", "FE_H", "NA_FE", "O_FE", "MG_FE",
@@ -85,7 +85,7 @@ else:
 
 # Run the model on all visits and plot dispersion as a function of S/N value.
 snr, combined_snr, label_difference, filename = precision_from_repeat_visits(
-    model, N_comparisons=1000, test_kwds=test_kwds)
+    model, N_comparisons=10000, test_kwds=test_kwds)
 
 with open(os.path.join(OUTPUT_PATH, "restricted_precision_snr.pkl"), "wb") as fp:
     pickle.dump((snr, combined_snr, label_difference, filename), fp)

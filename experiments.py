@@ -28,7 +28,11 @@ train_kwds = dict(op_method="l_bfgs_b", op_kwds=dict(factr=1e12, pgtol=1e-5),
 
 
 def setup_training_set(filename="apogee-dr14-giants-training-set.fits",
-    full_output=True):
+    full_output=True, **kwargs):
+
+    kwds = dict()
+    kwds.update(continuum_kwds)
+    kwds.update(kwargs)
 
     training_set_labels = Table.read(
         os.path.join(config["CANNON_DR14_DIR"], filename))
@@ -55,7 +59,7 @@ def setup_training_set(filename="apogee-dr14-giants-training-set.fits",
     # Continuum normalize.
     normalized_flux, normalized_ivar, continuum, meta = tc.continuum.normalize(
         vacuum_wavelength, training_set_flux, training_set_ivar, 
-        **continuum_kwds)
+        **kwds)
 
     training_set_flux = normalized_flux
     training_set_ivar = normalized_ivar
@@ -259,6 +263,138 @@ def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None,
 
     return (visit_snr, combined_snr, visit_label_difference, filenames)
 
+
+def get_globular_cluster_candidates(globular_cluster_fields=None, 
+    membership_criteria=None, **kwargs):
+
+
+    stars = Table.read(os.path.join(config["APOGEE_DR14_DIR"], "allStar-l31c.2.fits"))
+
+    if membership_criteria is None:
+        membership_criteria = {}
+
+    if globular_cluster_fields is None:
+        globular_cluster_fields = ('M12-N', 'M13', 'M15', 'M2', 'M3', 'M35N2158', 
+            'M5', 'M53', 'M54SGRC1', 'M5PAL5', 'M67', 'M71', 'M92', 'N1333', 'N188',
+            'N2243', 'N2420', 'N4147', 'N5466', 'N5634SGR2', 'N6229', 'N6791', 
+            'N6819', 'N7789')
+
+
+    is_gc_candidate = np.in1d(
+        stars["FIELD"],
+        ["{0:16s}".format(each) for each in globular_cluster_fields]
+    )
+
+    # Exclude things that ASPCAP did not find a TEFF/LOGG for.
+    is_gc_candidate *= (stars["TEFF"] > 0) \
+                    *  (stars["LOGG"] > -5000) \
+                    *  (stars["FE_H"] > -5000)
+    N_stars = sum(is_gc_candidate)
+
+    print("{} candidates found in fields {}".format(N_stars,
+        ", ".join(globular_cluster_fields)))
+
+
+
+    kwds = continuum_kwds.copy()
+    kwds.update(kwargs)
+
+    # Load in fluxes and inverse variances.
+    N_pixels = 8575 # Number of pixels per APOGEE spectrum.
+    
+    gc_candidate_flux = np.ones((N_stars, N_pixels))
+    gc_candidate_ivar = np.zeros_like(gc_candidate_flux)
+
+    gc_candidates = stars[is_gc_candidate]
+
+
+    for i, star in enumerate(gc_candidates):
+
+        # Load in the spectrum.
+        try:
+            vacuum_wavelength, flux, ivar, metadata = read_spectrum(
+                star["TELESCOPE"], star["FIELD"], star["LOCATION_ID"], star["FILE"])
+        except:
+            logging.warn("Error on star {}".format(i))
+            continue
+            
+
+        # Continuum normalize.
+        normalized_flux, normalized_ivar, continuum, meta \
+            = tc.continuum.normalize(vacuum_wavelength, flux, ivar, **kwds)
+
+        gc_candidate_flux[i, :] = normalized_flux
+        gc_candidate_ivar[i, :] = normalized_ivar
+
+        print(i)
+
+    pixel_is_used = np.zeros(N_pixels, dtype=bool)
+    for start, end in kwds["regions"]:
+        region_mask = (end >= vacuum_wavelength) * (vacuum_wavelength >= start)
+        pixel_is_used[region_mask] = True
+
+    gc_candidate_flux[:, ~pixel_is_used] = 1.0
+    gc_candidate_ivar[:, ~pixel_is_used] = 0.0
+
+    return (vacuum_wavelength, gc_candidates, gc_candidate_flux, gc_candidate_ivar)
+
+
+
+
+
+def aspcap_precision_from_repeat_visits(label_names, N_comparisons=None,
+    combined_filename="allStar-l31c.2.fits",
+    visit_filename="allVisit-l31c.2.fits"):
+
+    image_visits = fits.open(os.path.join(config["APOGEE_DR14_DIR"], visit_filename))
+    combined_visits = fits.open(os.path.join(config["APOGEE_DR14_DIR"], combined_filename))
+    
+    visit_snr = []
+    combined_snr = []
+    visit_labels_difference = []
+    filenames = []
+
+    K = 0
+    for i, target_id in enumerate(combined_visits[1].data["TARGET_ID"]):
+
+        match = image_visits[1].data["TARGET_ID"] == target_id
+        N_visits = sum(match)
+        if 2 > N_visits:
+            continue
+
+        combined_labels = np.array([combined_visits[1].data[ln][i] for ln in label_names])
+        visit_snr.extend(image_visits[1].data["SNR"][match])
+        combined_snr.extend([combined_visits[1].data["SNR"][i]] * N_visits)
+
+        visit_labels = np.array([image_visits[1].data[ln][match] for ln in label_names])
+        visit_label_difference.extend(visit_labels - combined_labels)
+
+        filenames.extend(image_visits[1].data["FILENAME"])
+
+        K += N_visits
+        print("Number of comparisons so far: {}".format(K))
+
+        if N_comparisons is not None and K >= N_comparisons:
+            break
+
+
+    filenames = np.array(filenames)
+    visit_snr = np.array(visit_snr)
+    combined_snr = np.array(combined_snr)
+    visit_label_difference = np.array(visit_label_difference)
+
+    image_visits.close()
+    combined_visits.close()
+
+    del image_visits, combined_visits
+
+    return (visit_snr, combined_snr, visit_label_difference, filenames)
+
+
+
+
+    # Find stars that are the same.
+    
 
 def get_balanced_training_set(label_names, label_names_for_balancing,
     snr_min=100, max_aspcap_chi2=5, bad_starflags=None, N_bins=10, 
