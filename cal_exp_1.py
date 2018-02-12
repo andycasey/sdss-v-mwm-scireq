@@ -41,7 +41,17 @@ if os.path.exists(model_path):
     model = tc.CannonModel.read(model_path)
 
 else:
-    raise a
+    vacuum_wavelengths, training_set_labels, training_set_flux, training_set_ivar \
+        = get_balanced_training_set(label_names, label_names_for_balancing)
+
+    vectorizer = tc.vectorizer.PolynomialVectorizer(label_names, order=2)
+
+    model = tc.CannonModel(
+        training_set_labels, training_set_flux, training_set_ivar, vectorizer,
+        dispersion=vacuum_wavelengths)
+
+    model.train(**train_kwds)
+    model.write(os.path.join(OUTPUT_PATH, "baseline.model"), overwrite=True)
 
 
 #visit_snr, combined_snr, visit_snr_labels, combined_snr_labels, apogee_ids \
