@@ -158,6 +158,39 @@ def setup_training_set_from_aspcap(
     return (training_set_labels, training_set_flux, training_set_ivar)
 
 
+def generate_calibration_visit_comparison(randomize=True, random_seed=42):
+
+    calibrations = fits.open(os.path.join(
+        config["APOGEE_DR14_DIR"], "l31c", "l31c.1", "allCal-l31c.1.fits"))
+
+    stars = fits.open(os.path.join(
+        os.path.join(config["APOGEE_DR14_DIR"], "allStar-l31c.2.fits")))[1].data
+
+    for i, apogee_id in enumerate(set(calibrations[1].data["APOGEE_ID"])):
+
+        star = stars[np.where(stars["APOGEE_ID"] == apogee_id)[0][0]]
+
+        vacuum_wavelength, flux, ivar, metadata = read_spectrum(
+            star["TELESCOPE"], star["FIELD"], star["LOCATION_ID"], star["FILE"],
+            combined=False)
+
+        if flux.size == 0 or not np.any(ivar > 0):
+            continue
+
+        try:
+            normalized_flux, normalized_ivar, _, __ = tc.continuum.normalize(
+                vacuum_wavelength, flux, ivar, **continuum_kwds)
+
+        except:
+            continue
+
+
+        yield (vacuum_wavelength, normalized_flux, normalized_ivar, star,
+            metadata)
+
+
+
+
 def generate_individual_visit_comparison(filename, randomize=True, random_seed=42):
 
     # Load the allStar file.
@@ -215,6 +248,55 @@ def generate_individual_visit_comparison(filename, randomize=True, random_seed=4
             normalized_flux, normalized_ivar, metadata)
 
 
+def precision_from_repeat_calibration_visits(model, N_comparisons=None,
+    test_kwds=None, randomize=True, random_seed=42):
+
+    test_kwds = {} if test_kwds is None else test_kwds
+
+    K = 0
+    visit_snr = []
+    combined_snr = []
+    combined_snr_labels = []
+    visit_snr_labels = []
+    apogee_ids = []
+
+    for comparison in generate_calibration_visit_comparison(randomize=randomize,
+        random_seed=random_seed):
+
+        vacuum_wavelength, flux, ivar, star, metadata = comparison
+
+        try:
+            visit_labels, _, __ = model.test(flux, ivar, **test_kwds)
+
+        except:
+            logging.warn("Failed on comparison:")
+            continue
+
+        aspcap_labels = np.array([star[ln] for ln in model.vectorizer.label_names])
+
+        N_visits = flux.shape[0]
+        visit_snr.extend(metadata["snr_visits"])
+        combined_snr.extend([star["SNR"]] * N_visits)
+        combined_snr_labels.append(
+            np.tile(aspcap_labels, N_visits).reshape((N_visits, -1)))
+        visit_snr_labels.extend(visit_labels)
+        apogee_ids.extend([star["APOGEE_ID"]] * N_visits)
+
+        K += N_visits
+        print("Number of comparisons so far: {}".format(K))
+
+        if N_comparisons is not None and K >= N_comparisons: break
+
+    visit_snr = np.array(visit_snr)
+    combined_snr = np.array(combined_snr)
+    combined_snr_labels = np.array(combined_snr_labels)
+    visit_snr_labels = np.array(visit_snr_labels)
+    apogee_ids = np.array(apogee_ids)
+
+    return (visit_snr, combined_snr, visit_snr_labels, combined_snr_labels,
+        apogee_ids)
+
+
 
 def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None, 
     filename="allStar-l31c.2.fits", randomize=True, random_seed=42):
@@ -265,7 +347,7 @@ def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None,
 
 
 def get_globular_cluster_candidates(globular_cluster_fields=None, 
-    membership_criteria=None, **kwargs):
+    membership_criteria=None, require_labels=None, **kwargs):
 
 
     stars = Table.read(os.path.join(config["APOGEE_DR14_DIR"], "allStar-l31c.2.fits"))
@@ -289,6 +371,10 @@ def get_globular_cluster_candidates(globular_cluster_fields=None,
     is_gc_candidate *= (stars["TEFF"] > 0) \
                     *  (stars["LOGG"] > -5000) \
                     *  (stars["FE_H"] > -5000)
+    if require_labels is not None:
+        for each in require_labels:
+            is_gc_candidate *= (stars[each] > -5000)
+
     N_stars = sum(is_gc_candidate)
 
     print("{} candidates found in fields {}".format(N_stars,
