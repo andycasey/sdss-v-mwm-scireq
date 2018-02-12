@@ -337,7 +337,7 @@ def precision_from_repeat_calibration_visits(model, N_comparisons=None,
     K = 0
     visit_snr = []
     combined_snr = []
-    combined_snr_labels = []
+    aspcap_combined_snr_labels = []
     visit_snr_labels = []
     apogee_ids = []
 
@@ -357,7 +357,7 @@ def precision_from_repeat_calibration_visits(model, N_comparisons=None,
         N_visits = flux.shape[0]
         visit_snr.extend(metadata["snr_visits"])
         combined_snr.extend([star["SNR"]] * N_visits)
-        combined_snr_labels.append(
+        aspcap_combined_snr_labels.append(
             np.tile(aspcap_labels, N_visits).reshape((N_visits, -1)))
         visit_snr_labels.extend(visit_labels)
         apogee_ids.extend([star["APOGEE_ID"]] * N_visits)
@@ -369,11 +369,11 @@ def precision_from_repeat_calibration_visits(model, N_comparisons=None,
 
     visit_snr = np.array(visit_snr)
     combined_snr = np.array(combined_snr)
-    combined_snr_labels = np.array(combined_snr_labels)
+    aspcap_combined_snr_labels = np.array(aspcap_combined_snr_labels)
     visit_snr_labels = np.array(visit_snr_labels)
     apogee_ids = np.array(apogee_ids)
 
-    return (visit_snr, combined_snr, visit_snr_labels, combined_snr_labels,
+    return (visit_snr, combined_snr, visit_snr_labels, aspcap_combined_snr_labels,
         apogee_ids)
 
 
