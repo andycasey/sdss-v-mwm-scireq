@@ -178,7 +178,7 @@ def generate_calibration_visit_comparison():
         except:
             continue
 
-        
+
         if flux.size == 0 or not np.any(ivar > 0):
             continue
 
@@ -280,7 +280,7 @@ def aspcap_precision_from_repeat_calibration_visits(label_names):
 
 
 def precision_from_repeat_calibration_visits(model, N_comparisons=None,
-    test_kwds=None, randomize=True, random_seed=42):
+    test_kwds=None):
 
     test_kwds = {} if test_kwds is None else test_kwds
 
@@ -291,8 +291,7 @@ def precision_from_repeat_calibration_visits(model, N_comparisons=None,
     visit_snr_labels = []
     apogee_ids = []
 
-    for comparison in generate_calibration_visit_comparison(randomize=randomize,
-        random_seed=random_seed):
+    for comparison in generate_calibration_visit_comparison():
 
         vacuum_wavelength, flux, ivar, star, metadata = comparison
 
