@@ -169,9 +169,9 @@ def generate_calibration_visit_comparison():
 
     for i, apogee_id in enumerate(set(calibrations[1].data["APOGEE_ID"])):
 
-        star = stars[np.where(stars["APOGEE_ID"] == apogee_id)[0][0]]
-
         try:
+            star = stars[np.where(stars["APOGEE_ID"] == apogee_id)[0][0]]
+
             vacuum_wavelength, flux, ivar, metadata = read_spectrum(
                 star["TELESCOPE"], star["FIELD"], star["LOCATION_ID"], star["FILE"],
                 combined=False)
@@ -269,13 +269,63 @@ def aspcap_precision_from_repeat_calibration_visits(label_names):
 
     for i, apogee_id in enumerate(set(calibrations[1].data["APOGEE_ID"])):
 
-        star = stars[np.where(stars["APOGEE_ID"] == apogee_id)[0][0]]
+        print(i, apogee_id)
+        try:
+            star = stars[np.where(stars["APOGEE_ID"] == apogee_id)[0][0]]
+        except:
+            logging.warn("Cannot find apogee id {}".format(apogee_id))
+            continue
 
-        combined_snr_labels = np.array([star[ln] for ln in label_names])
+        high_snr_labels = np.array([star[ln] for ln in label_names])
 
         match = np.where(calibrations[1].data["APOGEE_ID"] == apogee_id)[0]
-        #visit_snr = calibrations[1].data["SNR"][]
 
+        N_visits = sum(match)
+        visit_snr.extend(calibrations[1].data["SNR"][match])
+        combined_snr.extend([star["SNR"]] * N_visits)
+        combined_snr_labels.extend(
+            np.tile(high_snr_labels, N_visits).reshape((N_visits, -1)))
+
+        apogee_ids.extend([apogee_id] * N_visits)
+
+        elem_symbol = ['C', 'CI', 'N', 'O', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 
+        'K', 'Ca', 'Ti', 'TiII', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Ge', 
+        'Ce', 'Rb', 'Y', 'Nd']
+        elem_symbol = [each.upper() for each in elem_symbol]
+
+
+        foo = []
+        for label_name in label_names:
+
+            if label_name == "TEFF":
+                x = calibrations[1].data["PARAM"][match, 0]
+            elif label_name == "LOGG":
+                x = calibrations[1].data["PARAM"][match, 1]
+            else:
+                element, relative_to = label_name.split("_")
+                elem_index = elem_symbol.index(element)
+
+                if relative_to == "FE":
+                    fe_index = elem_symbol.index("FE")
+                    x = calibrations[1].data["X_H"][match, elem_index] \
+                      - calibrations[1].data["X_H"][match, fe_index]
+
+                else:
+                    x = calibrations[1].data["X_H"][match, elem_index]
+
+            foo.append(x)
+
+        visit_snr_labels.extend(np.vstack(foo).T)
+
+        
+    visit_snr = np.array(visit_snr)
+    apogee_ids = np.array(apogee_ids)
+    combined_snr = np.array(combined_snr)
+    combined_snr_labels = np.array(combined_snr_labels)
+    visit_snr_labels = np.array(visit_snr_labels)
+
+    return (visit_snr, combined_snr, visit_snr_labels, combined_snr_labels,
+        apogee_ids)
 
 
 
