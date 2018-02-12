@@ -158,7 +158,8 @@ def setup_training_set_from_aspcap(
     return (training_set_labels, training_set_flux, training_set_ivar)
 
 
-def generate_calibration_visit_comparison(randomize=True, random_seed=42):
+
+def generate_calibration_visit_comparison():
 
     calibrations = fits.open(os.path.join(
         config["APOGEE_DR14_DIR"], "l31c", "l31c.1", "allCal-l31c.1.fits"))
@@ -170,10 +171,14 @@ def generate_calibration_visit_comparison(randomize=True, random_seed=42):
 
         star = stars[np.where(stars["APOGEE_ID"] == apogee_id)[0][0]]
 
-        vacuum_wavelength, flux, ivar, metadata = read_spectrum(
-            star["TELESCOPE"], star["FIELD"], star["LOCATION_ID"], star["FILE"],
-            combined=False)
+        try:
+            vacuum_wavelength, flux, ivar, metadata = read_spectrum(
+                star["TELESCOPE"], star["FIELD"], star["LOCATION_ID"], star["FILE"],
+                combined=False)
+        except:
+            continue
 
+        
         if flux.size == 0 or not np.any(ivar > 0):
             continue
 
@@ -246,6 +251,32 @@ def generate_individual_visit_comparison(filename, randomize=True, random_seed=4
         # Create a comparison to add.
         yield (normalized_combined_flux, normalized_combined_ivar,
             normalized_flux, normalized_ivar, metadata)
+
+
+
+def aspcap_precision_from_repeat_calibration_visits(label_names):
+    calibrations = fits.open(os.path.join(
+        config["APOGEE_DR14_DIR"], "l31c", "l31c.1", "allCal-l31c.1.fits"))
+
+    stars = fits.open(os.path.join(
+        os.path.join(config["APOGEE_DR14_DIR"], "allStar-l31c.2.fits")))[1].data
+
+    visit_snr = []
+    combined_snr = []
+    combined_snr_labels = []
+    visit_snr_labels = []
+    apogee_ids = []
+
+    for i, apogee_id in enumerate(set(calibrations[1].data["APOGEE_ID"])):
+
+        star = stars[np.where(stars["APOGEE_ID"] == apogee_id)[0][0]]
+
+        combined_snr_labels = np.array([star[ln] for ln in label_names])
+
+        match = np.where(calibrations[1].data["APOGEE_ID"] == apogee_id)[0]
+        #visit_snr = calibrations[1].data["SNR"][]
+
+
 
 
 def precision_from_repeat_calibration_visits(model, N_comparisons=None,
