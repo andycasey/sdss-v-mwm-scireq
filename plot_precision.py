@@ -10,6 +10,7 @@ from matplotlib.ticker import MaxNLocator
 import thecannon as tc
 from astropy.table import Table
 from apogee import config
+from experiments import aspcap_precision_from_repeat_calibration_visits
 
 #allStar = Table.read("/Users/arc/research/projects/active/the-battery-stars/catalogs/allStar-l31c.2.fits")
 allStar = Table.read(os.path.join(config["APOGEE_DR14_DIR"], "allStar-l31c.2.fits"))
@@ -310,7 +311,7 @@ def plot_precision(experiments, compare_labels, square=True, xlim_upper=100,
 
 def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True,
     xlim_upper=None, ylim_uppers=None, color_offset=0, show_rms=True, 
-    minimum_combined_snr=100, **kwargs):
+    minimum_combined_snr=0, **kwargs):
 
     if ylim_uppers is None:
         ylim_uppers = {}
@@ -330,6 +331,7 @@ def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True,
     handles = []
     labels = []
 
+    
     for i, (ax, label_name) in enumerate(zip(axes, compare_labels)):
 
 
@@ -353,7 +355,8 @@ def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True,
 
             # We need some serious quality control here.
             qc = np.all(aspcap_combined_snr_labels > -9999, axis=1) \
-               * (combined_snr >= minimum_combined_snr)
+               * (combined_snr >= minimum_combined_snr) \
+               * np.all(visit_snr_labels > -9999, axis=1)
 
             # There are some stars that are obviously incorrect in ASPCAP
             # calibration things, but here I don't have the flags to be able
@@ -361,6 +364,7 @@ def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True,
 
             # TODO: Revisit this using ASPCAP flags.
             qc *= (np.abs(aspcap_combined_snr_labels[:, 0] - visit_snr_labels[:, 0]) < 500)
+
 
             """
 
@@ -454,9 +458,6 @@ def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True,
 
                 scat_kwds = dict(c=color, s=5)
                 ax.scatter(centers, show_y, **scat_kwds)
-
-
-            raise a
 
             
             plot_kwds = dict(lw=2, c=color)

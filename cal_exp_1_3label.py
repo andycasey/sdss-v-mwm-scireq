@@ -69,11 +69,26 @@ else:
         pickle.dump(results, fp)
 
 
+from experiments import aspcap_precision_from_repeat_calibration_visits
+
+aspcap_path = os.path.join(OUTPUT_PATH, "aspcap_results.pkl")
+if os.path.exists(aspcap_path):
+    with open(aspcap_path, "rb") as fp:
+        aspcap_results = pickle.load(fp)
+
+else:
+    aspcap_results = aspcap_precision_from_repeat_calibration_visits(label_names)
+    with open(aspcap_path, "wb") as fp:
+        pickle.dump(aspcap_results, fp)
+
+
+
 # Plot precision compared to ASPCAP values.
 experiments = [
     # Label, model basename, result basename, kwds
+    ["ASPCAP", model_path, aspcap_path, show_kwds],
     ["Baseline", model_path, results_path, show_kwds],
 ]
-fig = plot_precision_relative_to_aspcap(experiments, label_names, show_rms=False,
+fig = plot_precision_relative_to_aspcap(experiments, label_names, show_rms=True,
     square=False)
 

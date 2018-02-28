@@ -269,9 +269,12 @@ def aspcap_precision_from_repeat_calibration_visits(label_names):
     visit_snr_labels = []
     apogee_ids = []
 
-    for i, apogee_id in enumerate(set(calibrations[1].data["APOGEE_ID"])):
+    unique_apogee_ids = set(calibrations[1].data["APOGEE_ID"])
+    N = len(unique_apogee_ids)
 
-        print(i, apogee_id)
+    for i, apogee_id in enumerate(unique_apogee_ids):
+
+        print(i, N, apogee_id)
         try:
             star = stars[np.where(stars["APOGEE_ID"] == apogee_id)[0][0]]
         except:
@@ -282,7 +285,7 @@ def aspcap_precision_from_repeat_calibration_visits(label_names):
 
         match = np.where(calibrations[1].data["APOGEE_ID"] == apogee_id)[0]
 
-        N_visits = sum(match)
+        N_visits = len(match)
         visit_snr.extend(calibrations[1].data["SNR"][match])
         combined_snr.extend([star["SNR"]] * N_visits)
         combined_snr_labels.extend(
