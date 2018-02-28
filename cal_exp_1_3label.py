@@ -21,22 +21,19 @@ from apogee.io import read_spectrum
 from experiments import get_balanced_training_set, precision_from_repeat_calibration_visits
 from plot_precision import  plot_precision_relative_to_aspcap
 
-label_names = ["TEFF", "LOGG", "FE_H", "C_FE", "N_FE", "O_FE", "NA_FE",
-               "MG_FE", "AL_FE", "SI_FE", "P_FE", "S_FE", "K_FE", "CA_FE",
-               "TI_FE", "V_FE", "CR_FE", "MN_FE", "CO_FE", "NI_FE"]
-label_names_for_balancing = ["TEFF", "LOGG", "FE_H", "NA_FE", "O_FE", "MG_FE",
-                             "AL_FE"]
+label_names = ["TEFF", "LOGG", "FE_H"]
+label_names_for_balancing = ["TEFF", "LOGG", "FE_H"]
 
 
 # ----------- #
-train_kwds = dict(op_kwds=dict(factr=1e12, pgtol=1e-5))
+train_kwds = dict(op_kwds=dict(factr=10.0, pgtol=1e-6))
 test_kwds = dict()
 show_kwds = dict(
     fitted=True,
-    scatter_kwds=dict(visible=False),
+    scatter_kwds=dict(visible=True),
     fill_between_kwds=dict(visible=True)
 )
-OUTPUT_PATH = "experiments/1/"
+OUTPUT_PATH = "experiments/1-3label/"
 # ----------- #
 
 if not os.path.exists(OUTPUT_PATH): os.mkdir(OUTPUT_PATH)
@@ -48,7 +45,7 @@ if os.path.exists(model_path):
 
 else:
     vacuum_wavelengths, training_set_labels, training_set_flux, training_set_ivar \
-        = get_balanced_training_set(label_names, label_names_for_balancing)
+        = get_balanced_training_set(label_names, label_names_for_balancing, no_balance=10000)
 
     vectorizer = tc.vectorizer.PolynomialVectorizer(label_names, order=2)
 
@@ -77,5 +74,6 @@ experiments = [
     # Label, model basename, result basename, kwds
     ["Baseline", model_path, results_path, show_kwds],
 ]
-fig = plot_precision_relative_to_aspcap(experiments, label_names, show_rms=True)
+fig = plot_precision_relative_to_aspcap(experiments, label_names, show_rms=False,
+    square=False)
 

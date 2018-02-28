@@ -58,7 +58,7 @@ def setup_training_set(filename="apogee-dr14-giants-training-set.fits",
 
     # Continuum normalize.
     normalized_flux, normalized_ivar, continuum, meta = tc.continuum.normalize(
-        vacuum_wavelength, training_set_flux, training_set_ivar, 
+        vacuum_wavelength, training_set_flux, training_set_ivar,
         **kwds)
 
     training_set_flux = normalized_flux
@@ -83,6 +83,8 @@ def training_set_data(stars, **kwargs):
     training_set_flux = np.ones((N_training_set_stars, N_pixels))
     training_set_ivar = np.zeros_like(training_set_flux)
 
+    print("Number of star in training set: {}".format(N_training_set_stars))
+
     for i, star in enumerate(stars):
 
         # Load in the spectrum.
@@ -92,7 +94,7 @@ def training_set_data(stars, **kwargs):
         except:
             logging.warn("Error on star {}".format(i))
             continue
-            
+
 
         # Continuum normalize.
         normalized_flux, normalized_ivar, continuum, meta \
@@ -288,8 +290,8 @@ def aspcap_precision_from_repeat_calibration_visits(label_names):
 
         apogee_ids.extend([apogee_id] * N_visits)
 
-        elem_symbol = ['C', 'CI', 'N', 'O', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 
-        'K', 'Ca', 'Ti', 'TiII', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Ge', 
+        elem_symbol = ['C', 'CI', 'N', 'O', 'Na', 'Mg', 'Al', 'Si', 'P', 'S',
+        'K', 'Ca', 'Ti', 'TiII', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Ge',
         'Ce', 'Rb', 'Y', 'Nd']
         elem_symbol = [each.upper() for each in elem_symbol]
 
@@ -317,7 +319,7 @@ def aspcap_precision_from_repeat_calibration_visits(label_names):
 
         visit_snr_labels.extend(np.vstack(foo).T)
 
-        
+
     visit_snr = np.array(visit_snr)
     apogee_ids = np.array(apogee_ids)
     combined_snr = np.array(combined_snr)
@@ -357,7 +359,7 @@ def precision_from_repeat_calibration_visits(model, N_comparisons=None,
         N_visits = flux.shape[0]
         visit_snr.extend(metadata["snr_visits"])
         combined_snr.extend([star["SNR"]] * N_visits)
-        aspcap_combined_snr_labels.append(
+        aspcap_combined_snr_labels.extend(
             np.tile(aspcap_labels, N_visits).reshape((N_visits, -1)))
         visit_snr_labels.extend(visit_labels)
         apogee_ids.extend([star["APOGEE_ID"]] * N_visits)
@@ -378,7 +380,7 @@ def precision_from_repeat_calibration_visits(model, N_comparisons=None,
 
 
 
-def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None, 
+def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None,
     filename="allStar-l31c.2.fits", randomize=True, random_seed=42):
 
 
@@ -396,7 +398,7 @@ def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None,
         combined_flux, combined_ivar, visit_flux, visit_ivar, meta = comparison
 
         try:
-            combined_labels, _, __ = model.test(combined_flux, combined_ivar, 
+            combined_labels, _, __ = model.test(combined_flux, combined_ivar,
                                                 **test_kwds)
 
             visit_labels, _, __ = model.test(visit_flux, visit_ivar, **test_kwds)
@@ -410,7 +412,7 @@ def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None,
         combined_snr.extend([meta["snr_combined"]] * N_visits)
         filenames.extend([meta["filename"]] * N_visits)
         visit_label_difference.extend(visit_labels - combined_labels)
-        
+
         K += N_visits
 
         print("Number of comparisons so far: {}".format(K))
@@ -426,7 +428,7 @@ def precision_from_repeat_visits(model, N_comparisons=None, test_kwds=None,
     return (visit_snr, combined_snr, visit_label_difference, filenames)
 
 
-def get_globular_cluster_candidates(globular_cluster_fields=None, 
+def get_globular_cluster_candidates(globular_cluster_fields=None,
     membership_criteria=None, require_labels=None, **kwargs):
 
 
@@ -436,9 +438,9 @@ def get_globular_cluster_candidates(globular_cluster_fields=None,
         membership_criteria = {}
 
     if globular_cluster_fields is None:
-        globular_cluster_fields = ('M12-N', 'M13', 'M15', 'M2', 'M3', 'M35N2158', 
+        globular_cluster_fields = ('M12-N', 'M13', 'M15', 'M2', 'M3', 'M35N2158',
             'M5', 'M53', 'M54SGRC1', 'M5PAL5', 'M67', 'M71', 'M92', 'N1333', 'N188',
-            'N2243', 'N2420', 'N4147', 'N5466', 'N5634SGR2', 'N6229', 'N6791', 
+            'N2243', 'N2420', 'N4147', 'N5466', 'N5634SGR2', 'N6229', 'N6791',
             'N6819', 'N7789')
 
 
@@ -467,7 +469,7 @@ def get_globular_cluster_candidates(globular_cluster_fields=None,
 
     # Load in fluxes and inverse variances.
     N_pixels = 8575 # Number of pixels per APOGEE spectrum.
-    
+
     gc_candidate_flux = np.ones((N_stars, N_pixels))
     gc_candidate_ivar = np.zeros_like(gc_candidate_flux)
 
@@ -483,7 +485,7 @@ def get_globular_cluster_candidates(globular_cluster_fields=None,
         except:
             logging.warn("Error on star {}".format(i))
             continue
-            
+
 
         # Continuum normalize.
         normalized_flux, normalized_ivar, continuum, meta \
@@ -514,7 +516,7 @@ def aspcap_precision_from_repeat_visits(label_names, N_comparisons=None,
 
     image_visits = fits.open(os.path.join(config["APOGEE_DR14_DIR"], visit_filename))
     combined_visits = fits.open(os.path.join(config["APOGEE_DR14_DIR"], combined_filename))
-    
+
     visit_snr = []
     combined_snr = []
     visit_labels_difference = []
@@ -560,11 +562,11 @@ def aspcap_precision_from_repeat_visits(label_names, N_comparisons=None,
 
 
     # Find stars that are the same.
-    
+
 
 def get_balanced_training_set(label_names, label_names_for_balancing,
-    snr_min=100, max_aspcap_chi2=5, bad_starflags=None, N_bins=10, 
-    random_seed=42):
+    snr_min=100, max_aspcap_chi2=5, bad_starflags=None, N_bins=10,
+    random_seed=42, no_balance=0):
 
     if bad_starflags is None:
         bad_starflags =  [
@@ -590,11 +592,11 @@ def get_balanced_training_set(label_names, label_names_for_balancing,
     # We want stars with abundances.....
     # We can get the other abundances, but these are the ones we want to verify
     # our model with.
-    
+
     original_validation_set = validation_set.copy()
     for label_name in label_names:
-        
-        removed = (stars[label_name][original_validation_set] < -5000) 
+
+        removed = (stars[label_name][original_validation_set] < -5000)
         print("We removed {} good stars due to missing {}".format(
             sum(removed), label_name))
 
@@ -625,16 +627,21 @@ def get_balanced_training_set(label_names, label_names_for_balancing,
     use_bins = np.array(np.where(H >= 1)).T
     in_training_set = np.zeros(len(unbalanced_data), dtype=bool)
 
-    for i, bin_indices in enumerate(use_bins):
+    if no_balance > 0:
+        in_training_set[np.random.choice(np.arange(len(in_training_set)), no_balance, replace=False)] = True
 
-        star_indices = np.where(np.all(indices.T == bin_indices, axis=1))[0]
-        print(i, star_indices.size)
+    else:
 
-        if 1 > star_indices.size:
-            print("What the fuck?")
-            continue
+        for i, bin_indices in enumerate(use_bins):
 
-        in_training_set[np.random.choice(star_indices, size=1)] = True
+            star_indices = np.where(np.all(indices.T == bin_indices, axis=1))[0]
+            print(i, star_indices.size)
+
+            if 1 > star_indices.size:
+                print("What the fuck?")
+                continue
+
+            in_training_set[np.random.choice(star_indices, size=1)] = True
 
 
     star_indices = np.where(validation_set)[0][in_training_set]

@@ -9,8 +9,10 @@ from matplotlib.ticker import MaxNLocator
 
 import thecannon as tc
 from astropy.table import Table
+from apogee import config
 
-allStar = Table.read("/Users/arc/research/projects/active/the-battery-stars/catalogs/allStar-l31c.2.fits")
+#allStar = Table.read("/Users/arc/research/projects/active/the-battery-stars/catalogs/allStar-l31c.2.fits")
+allStar = Table.read(os.path.join(config["APOGEE_DR14_DIR"], "allStar-l31c.2.fits"))
 allStar["FILE"] = [each.strip() for each in allStar["FILE"]]
 
 
@@ -32,7 +34,7 @@ def latex_label(label_name):
 def plot_rms_given_snr(observed_snr, experiments, compare_labels, square=True, xlim_upper=100,
     ylim_uppers=None, color_offset=0, show_rms=True, line_value=0.1, **kwargs):
 
-    
+
 
     if ylim_uppers is None:
         ylim_uppers = {}
@@ -80,7 +82,7 @@ def plot_rms_given_snr(observed_snr, experiments, compare_labels, square=True, x
             y = np.abs(label_differences[:, label_index])
 
             color = colormap(kwds.get("color_index", j + color_offset))
-            
+
             scatter_kwds = dict(s=1, alpha=0.1, c=color)
             scatter_kwds.update(kwds.get("scatter_kwds", {}))
 
@@ -90,6 +92,7 @@ def plot_rms_given_snr(observed_snr, experiments, compare_labels, square=True, x
             N_bins = kwds.get("N_bins", int(len(snr) / 50))
 
             bins = equal_histogram_bins(snr, N_bins)
+            bins[0] = 0
             centers = bins[:-1] + np.diff(bins)/2.0
             indices = np.digitize(snr, bins)
 
@@ -114,7 +117,7 @@ def plot_rms_given_snr(observed_snr, experiments, compare_labels, square=True, x
             hist_kwds = dict(facecolor=color, alpha=0.5)
             ylim_upper = ylim_uppers.get(label_name,
                 250 if label_name.upper() == "TEFF" else 1)
-        
+
             bins = np.linspace(0, ylim_upper, 20)
             ax.hist(obs_rms, bins=bins, **hist_kwds)
 
@@ -123,15 +126,15 @@ def plot_rms_given_snr(observed_snr, experiments, compare_labels, square=True, x
 
 
     for ax, label_name in zip(axes, compare_labels):
-        
+
         ylim_upper = ylim_uppers.get(label_name,
                 250 if label_name.upper() == "TEFF" else 1)
-        
+
         ax.set_xlim(0, ylim_upper)
         if "_" in label_name:
             ax.axvline(line_value, zorder=100, **line_color[label_name])
         ax.xaxis.set_major_locator(MaxNLocator(3))
-        
+
         if ax.is_last_row():
             ax.set_xlabel(r"$\sigma$")
 
@@ -198,7 +201,7 @@ def plot_precision(experiments, compare_labels, square=True, xlim_upper=100,
             y = np.abs(label_differences[:, label_index])
 
             color = colormap(kwds.get("color_index", j + color_offset))
-            
+
             scatter_kwds = dict(s=1, alpha=0.1, c=color)
             scatter_kwds.update(kwds.get("scatter_kwds", {}))
 
@@ -264,7 +267,7 @@ def plot_precision(experiments, compare_labels, square=True, xlim_upper=100,
                 labels.append(model_name)
 
     for ax, label_name in zip(axes, compare_labels):
-        
+
         ax.set_xlim(0, xlim_upper)
 
         if ax.is_last_row():
@@ -305,8 +308,9 @@ def plot_precision(experiments, compare_labels, square=True, xlim_upper=100,
 
 
 
-def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True, 
-    xlim_upper=100, ylim_uppers=None, color_offset=0, show_rms=True, **kwargs):
+def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True,
+    xlim_upper=None, ylim_uppers=None, color_offset=0, show_rms=True, 
+    minimum_combined_snr=100, **kwargs):
 
     if ylim_uppers is None:
         ylim_uppers = {}
@@ -314,7 +318,7 @@ def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True,
     L = len(compare_labels)
     if square:
         K = int(np.ceil(np.sqrt(L)))
-        M = (K - 1) if (K - 1) * K <= L else K
+        M = (K - 1) if (K - 1) * K < L else K
         fig, axes = plt.subplots(K, M, figsize=(1.75*K, 1.75*M))
 
     else:
@@ -346,22 +350,68 @@ def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True,
                     label_name, model_path))
                 continue
 
+
+            # We need some serious quality control here.
+            qc = np.all(aspcap_combined_snr_labels > -9999, axis=1) \
+               * (combined_snr >= minimum_combined_snr)
+
+            # There are some stars that are obviously incorrect in ASPCAP
+            # calibration things, but here I don't have the flags to be able
+            # to easily discriminate.
+
+            # TODO: Revisit this using ASPCAP flags.
+            qc *= (np.abs(aspcap_combined_snr_labels[:, 0] - visit_snr_labels[:, 0]) < 500)
+
+            """
+
+            # Deal with ASPCAP values being -10000
+            unusable = np.abs(aspcap_combined_snr_labels[:, label_index]) > 9000
+            # IT'S OVER 9000 WHAT THE ACTUAL FUCK.
+
+            if any(unusable):
+                print("Discarding {} measurements because ASPCAP provides no values".format(sum(unusable)))
+                visit_snr = visit_snr[~unusable]
+                combined_snr = combined_snr[~unusable]
+                visit_snr_labels = visit_snr_labels[~unusable]
+                aspcap_combined_snr_labels = aspcap_combined_snr_labels[~unusable]
+                apogee_ids = apogee_ids[~unusable]
+
+            use = combined_snr >= minimum_combined_snr
+            print("Discarding {} because did not reach the minimum combined SNR of {}".format(
+                sum(~use), minimum_combined_snr))
+            visit_snr = visit_snr[use]
+            combined_snr = combined_snr[use]
+            visit_snr_labels = visit_snr_labels[use]
+            aspcap_combined_snr_labels = aspcap_combined_snr_labels[use]
+            apogee_ids = apogee_ids[use]
+            """
+
+            visit_snr = visit_snr[qc]
+            combined_snr = combined_snr[qc]
+            visit_snr_labels = visit_snr_labels[qc]
+            aspcap_combined_snr_labels = aspcap_combined_snr_labels[qc]
+            apogee_ids = apogee_ids[qc]
+
             y = np.abs(aspcap_combined_snr_labels[:, label_index] - visit_snr_labels[:, label_index])
 
             color = colormap(kwds.get("color_index", j + color_offset))
-            
+
             scatter_kwds = dict(s=1, alpha=0.1, c=color)
             scatter_kwds.update(kwds.get("scatter_kwds", {}))
 
-            ax.scatter(snr, y, **scatter_kwds)
+            ax.scatter(visit_snr, y, **scatter_kwds)
+
+            if np.any(y > 5000):
+                raise wtf
 
             # Show median and percentiles in each.
-            N_bins = kwds.get("N_bins", int(len(snr) / 50))
+            N_bins = 50 # kwds.get("N_bins", int(len(visit_snr) / 50))
             percentiles = kwds.get("percentiles", [16, 50, 84])
 
-            bins = equal_histogram_bins(snr, N_bins)
+            bins = equal_histogram_bins(visit_snr, N_bins)
+            bins[0] = 0
             centers = bins[:-1] + np.diff(bins)/2.0
-            indices = np.digitize(snr, bins)
+            indices = np.digitize(visit_snr, bins) - 1
 
             if not show_rms:
 
@@ -405,6 +455,10 @@ def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True,
                 scat_kwds = dict(c=color, s=5)
                 ax.scatter(centers, show_y, **scat_kwds)
 
+
+            raise a
+
+            
             plot_kwds = dict(lw=2, c=color)
             plot_kwds.update(kwds.get("plot_kwds", {}))
 
@@ -415,8 +469,9 @@ def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True,
                 labels.append(model_name)
 
     for ax, label_name in zip(axes, compare_labels):
-        
-        ax.set_xlim(0, xlim_upper)
+
+        if xlim_upper is not None:
+            ax.set_xlim(0, xlim_upper)
 
         if ax.is_last_row():
             ax.xaxis.set_major_locator(MaxNLocator(4))
@@ -451,5 +506,7 @@ def plot_precision_relative_to_aspcap(experiments, compare_labels, square=True,
         fontsize=8)
     legend_kwds.update(kwargs.pop("legend_kwds", {}))
     plt.figlegend(handles, labels, **legend_kwds)
+
+
 
     return fig
